@@ -58,7 +58,7 @@
               :key="loc.code"
               :variant="locale === loc.code ? 'solid' : 'ghost'"
               :color="locale === loc.code ? 'primary' : 'neutral'"
-              @click="locale = loc.code"
+              @click="setLocale(loc.code)"
               class="!px-3"
             >
               {{ loc.code.toUpperCase() }}
@@ -133,7 +133,7 @@ import RadarTargetPanel from '~/components/radar/TargetPanel.vue'
 import ManeuverPanel from '~/components/radar/ManeuverPanel.vue'
 import { TARGET_LETTERS } from '~/utils/radarConstants'
 
-const { locale, locales } = useI18n()
+const { locale, locales, setLocale } = useI18n()
 const colorMode = useColorMode()
 const radarStore = useRadarStore()
 const canvasRef = ref(null)
