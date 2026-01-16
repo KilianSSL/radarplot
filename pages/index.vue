@@ -86,10 +86,10 @@
         </aside>
         
         <!-- Center - Canvas -->
-        <section class="flex-1 min-h-[400px] lg:min-h-0 flex items-center justify-center">
-          <div class="aspect-square w-full max-w-full max-h-full bg-white dark:bg-gray-900 rounded-lg overflow-hidden shadow">
+        <section class="flex-1 min-h-[400px] lg:min-h-0 flex items-start justify-center">
+          <UCard class="aspect-square w-full max-w-full max-h-full overflow-hidden" :ui="{ body: { padding: 'p-0', base: 'h-full' } }">
             <RadarCanvas ref="canvasRef" />
-          </div>
+          </UCard>
         </section>
         
         <!-- Right Sidebar - Target Data & Maneuver -->
