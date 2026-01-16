@@ -1,7 +1,7 @@
 <template>
   <div 
     ref="containerRef" 
-    class="w-full h-full overflow-hidden relative touch-none"
+    class="w-full h-full min-h-[300px] overflow-hidden relative touch-none"
     @wheel.prevent="handleWheel"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
@@ -109,12 +109,15 @@ function render() {
 }
 
 // Setup ResizeObserver
-onMounted(() => {
-  nextTick(() => {
-    updateCanvasSize()
-    render()
-  })
+onMounted(async () => {
+  // Wait for next tick to ensure DOM is fully rendered
+  await nextTick()
   
+  // Initial size update
+  updateCanvasSize()
+  render()
+  
+  // Setup ResizeObserver for responsive updates
   if (containerRef.value && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => {
       updateCanvasSize()
@@ -126,6 +129,12 @@ onMounted(() => {
   }
   
   window.addEventListener('resize', handleResize)
+  
+  // Fallback: re-check size after a short delay for layout stabilization
+  setTimeout(() => {
+    updateCanvasSize()
+    render()
+  }, 100)
 })
 
 onUnmounted(() => {
