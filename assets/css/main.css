@@ -1,0 +1,44 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* Base font size - minimum 16px for accessibility */
+html {
+  font-size: 16px;
+}
+
+/* Ensure all text elements respect minimum size */
+body, input, button, select, textarea {
+  font-size: 1rem;
+}
+
+/* Mono font for data values */
+.font-mono {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* Tabular numbers for aligned data */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Force time inputs and their containers to take full width */
+.time-input {
+  width: 100% !important;
+}
+
+.time-input [data-part="root"],
+.time-input > div {
+  width: 100% !important;
+}
+
+input[type="time"] {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Hide the native time picker icon to allow full stretch */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: 0.6;
+  margin-left: auto;
+}
