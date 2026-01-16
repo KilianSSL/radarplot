@@ -14,11 +14,10 @@
   >
     <canvas
       ref="canvasRef"
-      :width="scaledCanvasWidth"
-      :height="scaledCanvasHeight"
-      class="bg-white dark:bg-slate-900"
+      :width="canvasWidth"
+      :height="canvasHeight"
+      class="bg-white dark:bg-slate-900 w-full h-full"
       :class="isDragging ? 'cursor-grabbing' : (zoom > 1 ? 'cursor-grab' : 'cursor-crosshair')"
-      :style="canvasStyle"
       @click="handleCanvasClick"
     />
     <!-- Zoom indicator -->
@@ -47,11 +46,11 @@ const isDark = computed(() => colorMode.value === 'dark')
 // ResizeObserver for responsive scaling
 let resizeObserver: ResizeObserver | null = null
 
-// Base canvas dimensions from store
-const baseCanvasWidth = computed(() => radarStore.canvasWidth)
-const baseCanvasHeight = computed(() => radarStore.canvasHeight)
+// Canvas dimensions - always match container
+const canvasWidth = computed(() => radarStore.canvasWidth)
+const canvasHeight = computed(() => radarStore.canvasHeight)
 
-// Zoom and pan state
+// Zoom and pan state (applied during rendering, not to canvas size)
 const zoom = ref(1)
 const panX = ref(0)
 const panY = ref(0)
@@ -68,26 +67,6 @@ const lastTouchDistance = ref(0)
 const lastTouchCenter = ref({ x: 0, y: 0 })
 const lastTapTime = ref(0)
 
-// Scaled canvas dimensions (render at higher resolution when zoomed)
-const scaledCanvasWidth = computed(() => Math.round(baseCanvasWidth.value * zoom.value))
-const scaledCanvasHeight = computed(() => Math.round(baseCanvasHeight.value * zoom.value))
-
-// Canvas style for positioning
-const canvasStyle = computed(() => {
-  const displayWidth = baseCanvasWidth.value * zoom.value
-  const displayHeight = baseCanvasHeight.value * zoom.value
-  
-  // Center offset plus pan
-  const offsetX = (baseCanvasWidth.value - displayWidth) / 2 + panX.value
-  const offsetY = (baseCanvasHeight.value - displayHeight) / 2 + panY.value
-  
-  return {
-    width: `${displayWidth}px`,
-    height: `${displayHeight}px`,
-    transform: `translate(${offsetX}px, ${offsetY}px)`
-  }
-})
-
 // Calculate optimal canvas size based on container
 function updateCanvasSize() {
   if (!containerRef.value) return
@@ -100,12 +79,12 @@ function updateCanvasSize() {
   }
 }
 
-// Render function
+// Render function - passes zoom and pan to renderer
 function render() {
   if (!canvasRef.value) return
   
   const renderer = useRadarRenderer(canvasRef as Ref<HTMLCanvasElement | null>, isDark.value)
-  renderer.render(radarStore.$state, zoom.value)
+  renderer.render(radarStore.$state, zoom.value, panX.value, panY.value)
 }
 
 // Setup ResizeObserver
@@ -166,8 +145,8 @@ watch(isDark, () => {
   })
 })
 
-// Watch zoom changes to re-render at new resolution
-watch(zoom, () => {
+// Watch zoom/pan changes to re-render
+watch([zoom, panX, panY], () => {
   nextTick(() => {
     render()
   })
@@ -217,10 +196,10 @@ function handleMouseMove(event: MouseEvent) {
   const dx = event.clientX - dragStart.value.x
   const dy = event.clientY - dragStart.value.y
   
-  // Limit pan based on zoom level - allow panning to edges
-  const maxPan = (baseCanvasWidth.value * (zoom.value - 1)) / 2
-  panX.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.x + dx))
-  panY.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.y + dy))
+  // Limit pan based on zoom level
+  const maxPan = (canvasWidth.value * (zoom.value - 1)) / (2 * zoom.value)
+  panX.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.x + dx / zoom.value))
+  panY.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.y + dy / zoom.value))
 }
 
 // Handle mouse up for pan end
@@ -305,9 +284,9 @@ function handleTouchMove(event: TouchEvent) {
     if (zoom.value > MIN_ZOOM) {
       const dx = newCenter.x - lastTouchCenter.value.x
       const dy = newCenter.y - lastTouchCenter.value.y
-      const maxPan = (baseCanvasWidth.value * (zoom.value - 1)) / 2
-      panX.value = Math.min(maxPan, Math.max(-maxPan, panX.value + dx))
-      panY.value = Math.min(maxPan, Math.max(-maxPan, panY.value + dy))
+      const maxPan = (canvasWidth.value * (zoom.value - 1)) / (2 * zoom.value)
+      panX.value = Math.min(maxPan, Math.max(-maxPan, panX.value + dx / zoom.value))
+      panY.value = Math.min(maxPan, Math.max(-maxPan, panY.value + dy / zoom.value))
     }
     lastTouchCenter.value = newCenter
     
@@ -315,9 +294,9 @@ function handleTouchMove(event: TouchEvent) {
     // Single finger pan
     const dx = touches[0].clientX - dragStart.value.x
     const dy = touches[0].clientY - dragStart.value.y
-    const maxPan = (baseCanvasWidth.value * (zoom.value - 1)) / 2
-    panX.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.x + dx))
-    panY.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.y + dy))
+    const maxPan = (canvasWidth.value * (zoom.value - 1)) / (2 * zoom.value)
+    panX.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.x + dx / zoom.value))
+    panY.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.y + dy / zoom.value))
   }
 }
 

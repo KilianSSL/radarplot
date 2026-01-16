@@ -1258,29 +1258,54 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
   /**
    * Render complete radar display
    * @param state - Radar state
-   * @param scale - Zoom scale factor (default 1)
+   * @param zoom - Zoom scale factor (default 1)
+   * @param panX - Pan X offset in pixels (default 0)
+   * @param panY - Pan Y offset in pixels (default 0)
    */
-  function render(state: RadarState, scale: number = 1) {
+  function render(state: RadarState, zoom: number = 1, panX: number = 0, panY: number = 0) {
     if (!state.doRender) return;
     if (!canvasRef.value) return;
     
-    // Calculate actual dimensions from canvas (which may be scaled for zoom)
-    const actualWidth = canvasRef.value.width;
-    const actualHeight = canvasRef.value.height;
+    const ctx = getContext();
+    if (!ctx) return;
     
-    // Create a scaled state for rendering at higher resolution
-    const scaledState: RadarState = {
+    // Get canvas dimensions
+    const width = canvasRef.value.width;
+    const height = canvasRef.value.height;
+    
+    // Create state with correct dimensions
+    const renderState: RadarState = {
       ...state,
-      canvasWidth: actualWidth,
-      canvasHeight: actualHeight,
-      centerX: actualWidth / 2,
-      centerY: actualHeight / 2,
-      radiusPixels: (Math.min(actualWidth, actualHeight) / 2) * 0.85,
-      step: ((Math.min(actualWidth, actualHeight) / 2) * 0.85) / 6
+      canvasWidth: width,
+      canvasHeight: height,
+      centerX: width / 2,
+      centerY: height / 2,
+      radiusPixels: (Math.min(width, height) / 2) * 0.85,
+      step: ((Math.min(width, height) / 2) * 0.85) / 6
     };
     
-    drawBackground(scaledState);
-    drawForeground(scaledState);
+    // Clear canvas
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset to identity
+    ctx.clearRect(0, 0, width, height);
+    ctx.restore();
+    
+    // Apply zoom and pan transformations
+    ctx.save();
+    
+    // Translate to center, apply zoom, then translate back with pan
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    ctx.translate(centerX, centerY);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-centerX + panX, -centerY + panY);
+    
+    // Draw all content with transformation applied
+    drawBackground(renderState);
+    drawForeground(renderState);
+    
+    ctx.restore();
   }
   
   // ==========================================================================
