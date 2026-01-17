@@ -481,6 +481,44 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
   }
   
   /**
+   * Draw course change arc for maneuver visualization
+   * Port of ARC_COURSE from radar.c
+   * Shows the rotation from old course to new course
+   */
+  function drawCourseChangeArc(
+    cx: number,
+    cy: number,
+    radius: number,
+    startCourse: number,
+    endCourse: number,
+    color: string,
+    isStarboard: boolean
+  ) {
+    const ctx = getContext();
+    if (!ctx) return;
+    
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    
+    // Convert nautical angles to canvas angles
+    // Nautical: 0=North, clockwise positive
+    // Canvas: 0=East (3 o'clock), counter-clockwise positive
+    const startRad = degToRad(nauticalToCanvasAngle(startCourse));
+    const endRad = degToRad(nauticalToCanvasAngle(endCourse));
+    
+    // For canvas arc:
+    // - anticlockwise=false means draw in positive (CCW) direction in canvas coords
+    // - which corresponds to clockwise in nautical terms (starboard turn)
+    // - anticlockwise=true means draw in negative (CW) direction in canvas coords
+    // - which corresponds to counter-clockwise in nautical terms (port turn)
+    const anticlockwise = isStarboard; // Starboard turns are CW in nautical = CCW direction from start to end
+    
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, startRad, endRad, anticlockwise);
+    ctx.stroke();
+  }
+  
+  /**
    * Draw filled polygon
    */
   function drawPolygon(
@@ -1027,6 +1065,39 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       
       // Draw arrow on new own ship vector (single arrow like POLY_NEW_OWN_ARROW)
       drawMidArrowOwn(apexX, apexY, xpointX, xpointY, COLORS.OWN_SHIP);
+      
+      // ==========================================================================
+      // Draw course change arc (ARC_COURSE) - only for course change maneuvers
+      // Port of radar.c arc drawing: shows rotation from old course to new course
+      // Arc is centered at p0_sub_own (apex) with radius = own ship travel distance
+      // ==========================================================================
+      if (state.maneuverType === 'course' && state.maneuverByCPA && state.maneuverResult?.courseChange !== undefined) {
+        const arcRadius = ownDistPx; // Radius = distance own ship travels during observation
+        const courseChange = state.maneuverResult.courseChange;
+        
+        if (Math.abs(courseChange) > 0.5 && arcRadius > 10) {
+          // In Course-Up mode, own course appears as 0 (heading always up)
+          // In North-Up mode, own course is the actual course
+          const displayOwnCourse = state.northUp ? state.ownCourse : 0;
+          const displayNewCourse = state.northUp ? 
+            normalizeAngle(state.ownCourse + courseChange) : 
+            courseChange;
+          
+          // Determine if we're turning starboard (positive) or port (negative)
+          const isStarboard = courseChange > 0;
+          
+          // Draw the arc from old course to new course
+          drawCourseChangeArc(
+            apexX, 
+            apexY, 
+            arcRadius, 
+            displayOwnCourse, 
+            displayNewCourse, 
+            COLORS.OWN_SHIP,
+            isStarboard
+          );
+        }
+      }
       
       // ==========================================================================
       // Draw dashed line from B₁ to mpoint if they differ significantly
