@@ -4,6 +4,7 @@
  */
 
 import { defineStore } from 'pinia';
+import { watch } from 'vue';
 import type { RadarState, Target, ManeuverType } from '~/utils/radarTypes';
 import {
   RADAR_NR_TARGETS,
@@ -13,6 +14,9 @@ import {
   TARGET_LETTERS
 } from '~/utils/radarConstants';
 import { useRadarCalculations } from '~/composables/radar/useRadarCalculations';
+
+// localStorage key for persisting state
+const STORAGE_KEY = 'radarplot-state';
 
 /**
  * Create empty target with default values
@@ -204,6 +208,82 @@ function createInitialState(): RadarState & {
     currentFilename: undefined,
     modified: false
   };
+}
+
+/**
+ * Extract only the input values that should be persisted
+ */
+interface PersistedState {
+  northUp: boolean;
+  showHeading: boolean;
+  rangeIndex: number;
+  ownCourse: number;
+  ownSpeed: number;
+  targets: Array<{
+    time: [number, number];
+    bearingType: ['rasp' | 'rakrp', 'rasp' | 'rakrp'];
+    bearing: [number, number];
+    bearingCourseOffset: [number, number];
+    distance: [number, number];
+  }>;
+  maneuverTargetIndex: number;
+  maneuverByTime: boolean;
+  maneuverTime: number;
+  maneuverDistance: number;
+  maneuverType: 'course' | 'speed';
+  maneuverByCPA: boolean;
+  desiredCPA: number;
+  newCourse: number;
+  newSpeed: number;
+}
+
+function extractPersistableState(state: RadarState): PersistedState {
+  return {
+    northUp: state.northUp,
+    showHeading: state.showHeading,
+    rangeIndex: state.rangeIndex,
+    ownCourse: state.ownCourse,
+    ownSpeed: state.ownSpeed,
+    targets: state.targets.map(t => ({
+      time: t.time,
+      bearingType: t.bearingType,
+      bearing: t.bearing,
+      bearingCourseOffset: t.bearingCourseOffset,
+      distance: t.distance
+    })),
+    maneuverTargetIndex: state.maneuverTargetIndex,
+    maneuverByTime: state.maneuverByTime,
+    maneuverTime: state.maneuverTime,
+    maneuverDistance: state.maneuverDistance,
+    maneuverType: state.maneuverType,
+    maneuverByCPA: state.maneuverByCPA,
+    desiredCPA: state.desiredCPA,
+    newCourse: state.newCourse,
+    newSpeed: state.newSpeed
+  };
+}
+
+function saveToLocalStorage(state: RadarState) {
+  if (typeof window === 'undefined') return;
+  try {
+    const persistedState = extractPersistableState(state);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedState));
+  } catch (e) {
+    console.warn('Failed to save state to localStorage:', e);
+  }
+}
+
+function loadFromLocalStorage(): Partial<PersistedState> | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.warn('Failed to load state from localStorage:', e);
+  }
+  return null;
 }
 
 export const useRadarStore = defineStore('radar', {
@@ -616,6 +696,69 @@ export const useRadarStore = defineStore('radar', {
       if (filename) {
         this.currentFilename = filename;
       }
+    },
+    
+    /**
+     * Save current state to localStorage
+     */
+    saveToStorage() {
+      saveToLocalStorage(this.$state);
+    },
+    
+    /**
+     * Load state from localStorage
+     */
+    loadFromStorage() {
+      const saved = loadFromLocalStorage();
+      if (saved) {
+        // Apply saved values
+        if (saved.northUp !== undefined) this.northUp = saved.northUp;
+        if (saved.showHeading !== undefined) this.showHeading = saved.showHeading;
+        if (saved.rangeIndex !== undefined) {
+          this.rangeIndex = saved.rangeIndex;
+          this.range = RADAR_RANGES[saved.rangeIndex]?.range ?? this.range;
+        }
+        if (saved.ownCourse !== undefined) this.ownCourse = saved.ownCourse;
+        if (saved.ownSpeed !== undefined) this.ownSpeed = saved.ownSpeed;
+        
+        // Apply target data
+        if (saved.targets) {
+          saved.targets.forEach((savedTarget, i) => {
+            if (this.targets[i]) {
+              this.targets[i].time = savedTarget.time;
+              this.targets[i].bearingType = savedTarget.bearingType;
+              this.targets[i].bearing = savedTarget.bearing;
+              this.targets[i].bearingCourseOffset = savedTarget.bearingCourseOffset;
+              this.targets[i].distance = savedTarget.distance;
+            }
+          });
+        }
+        
+        // Apply maneuver settings
+        if (saved.maneuverTargetIndex !== undefined) this.maneuverTargetIndex = saved.maneuverTargetIndex;
+        if (saved.maneuverByTime !== undefined) this.maneuverByTime = saved.maneuverByTime;
+        if (saved.maneuverTime !== undefined) this.maneuverTime = saved.maneuverTime;
+        if (saved.maneuverDistance !== undefined) this.maneuverDistance = saved.maneuverDistance;
+        if (saved.maneuverType !== undefined) this.maneuverType = saved.maneuverType;
+        if (saved.maneuverByCPA !== undefined) this.maneuverByCPA = saved.maneuverByCPA;
+        if (saved.desiredCPA !== undefined) this.desiredCPA = saved.desiredCPA;
+        if (saved.newCourse !== undefined) this.newCourse = saved.newCourse;
+        if (saved.newSpeed !== undefined) this.newSpeed = saved.newSpeed;
+        
+        // Recalculate everything
+        this.recalculateAllTargets();
+        this.modified = false;
+      }
+    },
+    
+    /**
+     * Clear localStorage and reset
+     */
+    clearStorage() {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+      this.resetPlot();
     }
   }
 });

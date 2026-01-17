@@ -20,37 +20,6 @@
         
         <!-- Actions -->
         <div class="flex items-center gap-2">
-          <!-- File Actions -->
-          <UButtonGroup class="hidden md:flex">
-            <UButton
-              icon="i-heroicons-document-plus"
-              variant="ghost"
-              color="neutral"
-              @click="handleNew"
-            >
-              {{ $t('menu.new') }}
-            </UButton>
-            <UButton
-              icon="i-heroicons-folder-open"
-              variant="ghost"
-              color="neutral"
-              @click="handleOpen"
-            >
-              {{ $t('menu.open') }}
-            </UButton>
-            <UButton
-              icon="i-heroicons-arrow-down-tray"
-              variant="ghost"
-              color="neutral"
-              @click="handleSave"
-            >
-              {{ $t('menu.save') }}
-            </UButton>
-          </UButtonGroup>
-
-          <!-- Divider -->
-          <div class="w-px h-6 bg-gray-200 dark:bg-gray-700 hidden md:block" />
-          
           <!-- Language Switcher -->
           <UButtonGroup>
             <UButton
@@ -127,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRadarStore } from '~/stores/radarStore'
 import RadarTargetPanel from '~/components/radar/TargetPanel.vue'
 import ManeuverPanel from '~/components/radar/ManeuverPanel.vue'
@@ -138,6 +107,16 @@ const colorMode = useColorMode()
 const radarStore = useRadarStore()
 const canvasRef = ref(null)
 const selectedTargetIndex = ref(0)
+
+// Load state from localStorage on mount
+onMounted(() => {
+  radarStore.loadFromStorage()
+  
+  // Auto-save to localStorage when state changes
+  radarStore.$subscribe((mutation, state) => {
+    radarStore.saveToStorage()
+  })
+})
 
 // Available locales for language switcher
 const availableLocales = computed(() => 
@@ -157,22 +136,6 @@ const targetOptions = TARGET_LETTERS.map((letter, index) => ({
   value: index,
   label: `Target ${letter}`
 }))
-
-// File actions
-function handleNew() {
-  if (radarStore.modified) {
-    if (!confirm('Discard unsaved changes?')) return
-  }
-  radarStore.resetPlot()
-}
-
-function handleOpen() {
-  console.log('Open file')
-}
-
-function handleSave() {
-  console.log('Save file')
-}
 
 // Set page meta
 useHead({
