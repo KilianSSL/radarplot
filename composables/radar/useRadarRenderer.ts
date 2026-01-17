@@ -498,7 +498,8 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     if (!ctx) return;
     
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]); // Dashed arc like in original
     
     // Convert nautical angles to canvas angles
     // Nautical: 0=North, clockwise positive
@@ -506,16 +507,25 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     const startRad = degToRad(nauticalToCanvasAngle(startCourse));
     const endRad = degToRad(nauticalToCanvasAngle(endCourse));
     
-    // For canvas arc:
-    // - anticlockwise=false means draw in positive (CCW) direction in canvas coords
-    // - which corresponds to clockwise in nautical terms (starboard turn)
-    // - anticlockwise=true means draw in negative (CW) direction in canvas coords
-    // - which corresponds to counter-clockwise in nautical terms (port turn)
-    const anticlockwise = isStarboard; // Starboard turns are CW in nautical = CCW direction from start to end
+    // Canvas arc direction:
+    // - In canvas coords: 0° = east (3 o'clock), positive = counterclockwise
+    // - In nautical coords: 0° = north, positive (starboard) = clockwise
+    // 
+    // For starboard turn (clockwise in real life):
+    // - We go from higher nautical angle to lower (or wrap around)
+    // - In canvas coords, this is counterclockwise direction
+    // - So anticlockwise=false (default direction)
+    // 
+    // For port turn (counterclockwise in real life):
+    // - We go from lower nautical angle to higher
+    // - In canvas coords, this is clockwise direction  
+    // - So anticlockwise=true
+    const anticlockwise = !isStarboard;
     
     ctx.beginPath();
     ctx.arc(cx, cy, radius, startRad, endRad, anticlockwise);
     ctx.stroke();
+    ctx.setLineDash([]); // Reset line dash
   }
   
   /**
