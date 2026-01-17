@@ -184,7 +184,9 @@ function convertRptToState(sections: Record<string, Record<string, string>>): Pa
     }
     
     if (maneuver['Type'] !== undefined) {
-      state.maneuverType = parseInt(maneuver['Type']);
+      // Original C code: Type=0 means course change, Type=1 means speed change
+      const typeNum = parseInt(maneuver['Type']);
+      state.maneuverType = typeNum === 1 ? 'speed' : 'course';
     }
     
     if (maneuver['ByCPA'] !== undefined) {
@@ -262,12 +264,14 @@ export function generateRptFile(state: RadarState): string {
   }
   
   // Maneuver section
-  if (state.selectedTarget >= 0 && state.maneuverType > 0) {
+  if (state.selectedTarget >= 0 && state.maneuverType) {
     lines.push('[Maneuver]');
     lines.push(`ByTime=${state.mtimeSelected ? 'true' : 'false'}`);
     lines.push(`Time=${state.mtime}`);
     lines.push(`Distance=${state.mdistance.toFixed(1)}`);
-    lines.push(`Type=${state.maneuverType}`);
+    // Original C code: Type=0 means course change, Type=1 means speed change
+    const typeNum = state.maneuverType === 'speed' ? 1 : 0;
+    lines.push(`Type=${typeNum}`);
     lines.push(`ByCPA=${state.mcpaSelected ? 'true' : 'false'}`);
     lines.push(`CPA=${state.mcpa.toFixed(1)}`);
     lines.push(`Course=${state.ncourse.toFixed(1)}`);
