@@ -485,9 +485,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
    * Port of ARC_COURSE from radar.c (lines 4390-4395)
    * Shows the rotation from old course to new course
    * 
-   * Original C code uses:
-   *   angle1 = -fmod(crs + 270.0, 360.0)  <- start angle (in GDK degrees)
-   *   angle2 = delta (sweep angle)
+   * Draws arc manually to ensure correct sweep direction and length
    */
   function drawCourseChangeArc(
     cx: number,
@@ -505,31 +503,34 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]); // Dashed arc like in original
     
-    // In course-up mode, the heading is always up (0°), so the arc starts there
-    // In north-up mode, the arc starts at own course
-    const crs = northUp ? ownCourse : 0;
+    // In course-up mode, heading is always up (0°)
+    // In north-up mode, use actual course
+    const startCourse = northUp ? ownCourse : 0;
+    const endCourse = startCourse + courseChange;
     
-    // Convert nautical angle to canvas angle
-    // Nautical: 0=North, clockwise positive
-    // Canvas: 0=East, counter-clockwise positive
-    // So nautical N (0°) = canvas 90° (up)
-    // Conversion: canvas = 90 - nautical
-    const startAngleCanvas = 90 - crs;
-    const endAngleCanvas = 90 - (crs + courseChange);
-    
-    const startRad = degToRad(startAngleCanvas);
-    const endRad = degToRad(endAngleCanvas);
-    
-    // For starboard turn (positive courseChange): we turn clockwise in nautical terms
-    // In canvas: from 90° to 60° (for +30° turn), we need to go CLOCKWISE (short way)
-    // Canvas clockwise = anticlockwise:false
-    // For port turn (negative courseChange): we turn counter-clockwise in nautical
-    // In canvas: from 90° to 120° (for -30° turn), we need to go COUNTER-CLOCKWISE (short way)
-    // Canvas counter-clockwise = anticlockwise:true
-    const anticlockwise = courseChange < 0;
+    // Draw arc manually using line segments to ensure correct direction
+    // Sweep in 2-degree increments
+    const steps = Math.max(Math.abs(Math.round(courseChange / 2)), 1);
+    const increment = courseChange / steps;
     
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, startRad, endRad, anticlockwise);
+    
+    for (let i = 0; i <= steps; i++) {
+      const course = startCourse + i * increment;
+      // Convert nautical angle to canvas coordinates
+      // Nautical: 0=North, clockwise
+      // We need to plot points around the arc
+      const angleRad = degToRad(course - 90); // -90 to convert from nautical to math (0=East)
+      const x = cx + radius * Math.cos(angleRad);
+      const y = cy + radius * Math.sin(angleRad);
+      
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    
     ctx.stroke();
     ctx.setLineDash([]); // Reset line dash
   }
