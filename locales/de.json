@@ -1,7 +1,8 @@
 {
   "app": {
     "title": "Radarplot",
-    "subtitle": "Nautisches Radar-Plotting-Hilfsmittel"
+    "subtitle": "Nautisches Radar-Plotting-Hilfsmittel",
+    "newCalculation": "Neu"
   },
   "menu": {
     "file": "Datei",

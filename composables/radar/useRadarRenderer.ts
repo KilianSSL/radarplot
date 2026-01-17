@@ -1162,8 +1162,8 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
   }
   
   /**
-   * Draw mid-arrow marker for VECTOR_OWN style (arrow in middle of line)
-   * Port of radar_mark_vector for VECTOR_OWN case from radar.c
+   * Draw mid-arrow marker for VECTOR_OWN style (TWO arrows in >> pattern)
+   * Blue own ship vector gets double arrows
    */
   function drawMidArrowOwn(
     x1: number,
@@ -1179,7 +1179,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     const dy = y2 - y1;
     const l = Math.sqrt(dx * dx + dy * dy);
     
-    if (l < 10) return; // Too short to draw arrow
+    if (l < 18) return; // Too short to draw arrows
     
     const alpha = Math.atan2(dy, dx);
     const sina = Math.sin(alpha);
@@ -1189,27 +1189,37 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     const cx = x1 + l / 2.0 * cosa;
     const cy = y1 + l / 2.0 * sina;
     
-    // Arrow points (matching C code exactly)
-    const sx = cx + 5.0 * cosa;  // Tip
-    const sy = cy + 5.0 * sina;
-    const ex = cx - 3.66 * cosa; // Base center
-    const ey = cy - 3.66 * sina;
-    
-    // Triangle vertices
-    const p0x = ex - 3.66 * sina;
-    const p0y = ey + 3.66 * cosa;
-    const p1x = sx;
-    const p1y = sy;
-    const p2x = ex + 3.66 * sina;
-    const p2y = ey - 3.66 * cosa;
-    
     ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(p0x, p0y);
-    ctx.lineTo(p1x, p1y);
-    ctx.lineTo(p2x, p2y);
-    ctx.closePath();
-    ctx.fill();
+    
+    // FIRST ARROW - front arrow
+    {
+      const sx = cx + 8.0 * cosa;
+      const sy = cy + 8.0 * sina;
+      const ex = cx - 0.66 * cosa;
+      const ey = cy - 0.66 * sina;
+      
+      ctx.beginPath();
+      ctx.moveTo(ex - 4.0 * sina, ey + 4.0 * cosa);
+      ctx.lineTo(sx, sy);
+      ctx.lineTo(ex + 4.0 * sina, ey - 4.0 * cosa);
+      ctx.closePath();
+      ctx.fill();
+    }
+    
+    // SECOND ARROW - back arrow
+    {
+      const sx = cx + 0.0 * cosa;
+      const sy = cy + 0.0 * sina;
+      const ex = cx - 8.66 * cosa;
+      const ey = cy - 8.66 * sina;
+      
+      ctx.beginPath();
+      ctx.moveTo(ex - 4.0 * sina, ey + 4.0 * cosa);
+      ctx.lineTo(sx, sy);
+      ctx.lineTo(ex + 4.0 * sina, ey - 4.0 * cosa);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
   
   /**

@@ -20,6 +20,24 @@
         
         <!-- Actions -->
         <div class="flex items-center gap-2">
+          <!-- New Calculation -->
+          <UButton
+            icon="i-heroicons-plus"
+            :label="$t('app.newCalculation')"
+            variant="soft"
+            color="primary"
+            @click="resetCalculation"
+            class="hidden sm:flex"
+          />
+          <UButton
+            icon="i-heroicons-plus"
+            variant="soft"
+            color="primary"
+            square
+            @click="resetCalculation"
+            class="sm:hidden"
+          />
+          
           <!-- Language Switcher -->
           <UButtonGroup>
             <UButton
@@ -129,6 +147,12 @@ const availableLocales = computed(() =>
 // Toggle color mode
 function toggleColorMode() {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+}
+
+// Reset calculation - clear localStorage and start fresh
+function resetCalculation() {
+  radarStore.clearStorage()
+  selectedTargetIndex.value = 0
 }
 
 // Target selection options
