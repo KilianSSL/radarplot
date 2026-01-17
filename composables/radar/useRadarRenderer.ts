@@ -151,19 +151,23 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
   
   /**
    * Draw bearing lines (radial lines)
-   * Port of bearing line drawing from radar.c
+   * Port of bearing line drawing from radar.c using outer_sincos()
    * Uses nautical coordinate system: 0° = North, clockwise
-   * In Course Up mode, the entire grid rotates so own heading is at top
+   * 
+   * IMPORTANT: Background (grid, labels) NEVER rotates - always shows true bearings
+   * in fixed positions. Only the foreground (targets, vectors) rotates in Course Up mode.
+   * This matches the original C code which uses outer_sincos() for background elements.
    */
   function drawBearingLines(
     cx: number,
     cy: number,
-    radius: number,
-    northUp: boolean = true,
-    ownCourse: number = 0
+    radius: number
   ) {
     const ctx = getContext();
     if (!ctx) return;
+    
+    // Background NEVER rotates - always use true bearings (northUp=true, ownCourse=0)
+    // This matches the original C code's outer_sincos() function
     
     // Minor bearing lines (every 10°)
     ctx.strokeStyle = COLORS.GRID;
@@ -171,8 +175,8 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     for (let angle = 0; angle < 360; angle += BEARING_LINES.MINOR) {
       if (angle % BEARING_LINES.MEDIUM === 0) continue; // Skip medium lines
       
-      const pos1 = bearingDistanceToXY(cx, cy, angle, radius * 0.25, northUp, ownCourse);
-      const pos2 = bearingDistanceToXY(cx, cy, angle, radius, northUp, ownCourse);
+      const pos1 = bearingDistanceToXY(cx, cy, angle, radius * 0.25, true, 0);
+      const pos2 = bearingDistanceToXY(cx, cy, angle, radius, true, 0);
       
       ctx.beginPath();
       ctx.moveTo(pos1.x, pos1.y);
@@ -186,8 +190,8 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     for (let angle = 0; angle < 360; angle += BEARING_LINES.MEDIUM) {
       if (angle % BEARING_LINES.MAJOR === 0) continue; // Skip major lines
       
-      const pos1 = bearingDistanceToXY(cx, cy, angle, radius * 0.25, northUp, ownCourse);
-      const pos2 = bearingDistanceToXY(cx, cy, angle, radius, northUp, ownCourse);
+      const pos1 = bearingDistanceToXY(cx, cy, angle, radius * 0.25, true, 0);
+      const pos2 = bearingDistanceToXY(cx, cy, angle, radius, true, 0);
       
       ctx.beginPath();
       ctx.moveTo(pos1.x, pos1.y);
@@ -199,7 +203,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     ctx.strokeStyle = COLORS.GRID_MAJOR;
     ctx.lineWidth = 1;
     for (let angle = 0; angle < 360; angle += BEARING_LINES.MAJOR) {
-      const pos = bearingDistanceToXY(cx, cy, angle, radius, northUp, ownCourse);
+      const pos = bearingDistanceToXY(cx, cy, angle, radius, true, 0);
       
       ctx.beginPath();
       ctx.moveTo(cx, cy);
@@ -210,16 +214,16 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
   
   /**
    * Draw bearing labels around perimeter
-   * Port of bearing label drawing from radar.c
+   * Port of bearing label drawing from radar.c using outer_sincos()
    * Uses nautical coordinate system: 0° = North, clockwise
-   * In Course Up mode, labels rotate with the grid
+   * 
+   * IMPORTANT: Background (grid, labels) NEVER rotates - always shows true bearings
+   * in fixed positions. This matches the original C code's outer_sincos() function.
    */
   function drawBearingLabels(
     cx: number,
     cy: number,
-    radius: number,
-    northUp: boolean = true,
-    ownCourse: number = 0
+    radius: number
   ) {
     const ctx = getContext();
     if (!ctx) return;
@@ -232,10 +236,10 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     const labelRadius = radius + 20; // Position outside rings
     
     // Draw labels every 10 degrees
-    // Use bearingDistanceToXY for correct nautical positioning
-    // In Course Up mode, the labels rotate with the grid
+    // Background NEVER rotates - always use true bearings (northUp=true, ownCourse=0)
+    // This matches the original C code's outer_sincos() function
     for (let angle = 0; angle < 360; angle += 10) {
-      const pos = bearingDistanceToXY(cx, cy, angle, labelRadius, northUp, ownCourse);
+      const pos = bearingDistanceToXY(cx, cy, angle, labelRadius, true, 0);
       
       const label = angle.toString().padStart(3, '0');
       ctx.fillText(label, pos.x, pos.y);
@@ -244,9 +248,11 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
   
   /**
    * Draw range labels on cardinal directions
-   * Port of range label drawing from radar.c
+   * Port of range label drawing from radar.c using outer_sincos()
    * Uses nautical coordinate system: 0° = North, clockwise
-   * In Course Up mode, labels rotate with the grid
+   * 
+   * IMPORTANT: Background (grid, labels) NEVER rotates - always shows true bearings
+   * in fixed positions. This matches the original C code's outer_sincos() function.
    */
   function drawRangeLabels(
     cx: number,
@@ -254,9 +260,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     step: number,
     range: number,
     marks: number,
-    digits: number,
-    northUp: boolean = true,
-    ownCourse: number = 0
+    digits: number
   ) {
     const ctx = getContext();
     if (!ctx) return;
@@ -277,7 +281,8 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         const r = step * i;
         const distance = (i * range) / RANGE_RINGS;
         
-        const pos = bearingDistanceToXY(cx, cy, angle, r, northUp, ownCourse);
+        // Background NEVER rotates - always use true bearings
+        const pos = bearingDistanceToXY(cx, cy, angle, r, true, 0);
         
         // Format distance based on digits
         const label = digits > 0 
@@ -396,16 +401,17 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     const ownCourse = state.ownCourse;
     
     // Draw in order (back to front)
-    // Pass northUp and ownCourse to all functions for Course Up mode support
+    // IMPORTANT: Background (grid, labels) NEVER rotates - always shows true bearings
+    // Only the foreground (targets, vectors) rotates in Course Up mode
+    // This matches the original C code's outer_sincos() vs radar_sincos() separation
     drawRangeRings(cx, cy, radius, step, marks);
-    drawBearingLines(cx, cy, radius, northUp, ownCourse);
-    drawRangeLabels(cx, cy, step, range, marks, digits, northUp, ownCourse);
-    drawBearingLabels(cx, cy, radius, northUp, ownCourse);
+    drawBearingLines(cx, cy, radius);
+    drawRangeLabels(cx, cy, step, range, marks, digits);
+    drawBearingLabels(cx, cy, radius);
     drawCenterMarker(cx, cy);
     
     // Draw heading indicator when enabled
-    // In North Up mode: heading line points at the actual course direction
-    // In Course Up mode: heading always points up (since grid is rotated)
+    // This DOES rotate with course-up mode to show own ship heading direction
     if (state.showHeading) {
       drawHeadingIndicator(cx, cy, radius, ownCourse, true, northUp, ownCourse);
     }
