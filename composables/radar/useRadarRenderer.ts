@@ -482,17 +482,21 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
   
   /**
    * Draw course change arc for maneuver visualization
-   * Port of ARC_COURSE from radar.c
+   * Port of ARC_COURSE from radar.c (lines 4390-4395)
    * Shows the rotation from old course to new course
+   * 
+   * Original C code uses:
+   *   angle1 = -fmod(crs + 270.0, 360.0)  <- start angle
+   *   angle2 = -direction * fmod(360.0 + direction * (ncourse - own_course), 360.0)  <- DELTA angle
    */
   function drawCourseChangeArc(
     cx: number,
     cy: number,
     radius: number,
-    startCourse: number,
-    endCourse: number,
+    ownCourse: number,
+    courseChange: number,
     color: string,
-    isStarboard: boolean
+    northUp: boolean
   ) {
     const ctx = getContext();
     if (!ctx) return;
@@ -501,26 +505,24 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]); // Dashed arc like in original
     
-    // Convert nautical angles to canvas angles
-    // Nautical: 0=North, clockwise positive
-    // Canvas: 0=East (3 o'clock), counter-clockwise positive
-    const startRad = degToRad(nauticalToCanvasAngle(startCourse));
-    const endRad = degToRad(nauticalToCanvasAngle(endCourse));
+    // Calculate start angle like original: -fmod(crs + 270.0, 360.0)
+    // In course-up mode, crs = 0; in north-up mode, crs = own_course
+    const crs = northUp ? ownCourse : 0;
+    const startAngleDeg = -((crs + 270) % 360);
+    const startRad = degToRad(startAngleDeg);
     
-    // Canvas arc direction:
-    // - In canvas coords: 0° = east (3 o'clock), positive = counterclockwise
-    // - In nautical coords: 0° = north, positive (starboard) = clockwise
-    // 
-    // For starboard turn (clockwise in real life):
-    // - We go from higher nautical angle to lower (or wrap around)
-    // - In canvas coords, this is counterclockwise direction
-    // - So anticlockwise=false (default direction)
-    // 
-    // For port turn (counterclockwise in real life):
-    // - We go from lower nautical angle to higher
-    // - In canvas coords, this is clockwise direction  
-    // - So anticlockwise=true
-    const anticlockwise = !isStarboard;
+    // Calculate delta angle like original:
+    // -direction * fmod(360.0 + direction * (ncourse - own_course), 360.0)
+    // courseChange = ncourse - own_course
+    const direction = courseChange > 0 ? 1 : -1; // starboard = 1, port = -1
+    const deltaDeg = -direction * ((360 + direction * courseChange) % 360);
+    const deltaRad = degToRad(deltaDeg);
+    
+    // Draw arc using delta approach
+    const endRad = startRad + deltaRad;
+    
+    // Determine arc direction based on delta sign
+    const anticlockwise = deltaRad < 0;
     
     ctx.beginPath();
     ctx.arc(cx, cy, radius, startRad, endRad, anticlockwise);
@@ -1086,25 +1088,16 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         const courseChange = state.maneuverResult.courseChange;
         
         if (Math.abs(courseChange) > 0.5 && arcRadius > 10) {
-          // In Course-Up mode, own course appears as 0 (heading always up)
-          // In North-Up mode, own course is the actual course
-          const displayOwnCourse = state.northUp ? state.ownCourse : 0;
-          const displayNewCourse = state.northUp ? 
-            normalizeAngle(state.ownCourse + courseChange) : 
-            courseChange;
-          
-          // Determine if we're turning starboard (positive) or port (negative)
-          const isStarboard = courseChange > 0;
-          
-          // Draw the arc from old course to new course
+          // Draw the arc showing course change
+          // Parameters match original C code: ownCourse, courseChange, northUp mode
           drawCourseChangeArc(
             apexX, 
             apexY, 
             arcRadius, 
-            displayOwnCourse, 
-            displayNewCourse, 
+            state.ownCourse,
+            courseChange,
             COLORS.OWN_SHIP,
-            isStarboard
+            state.northUp
           );
         }
       }
