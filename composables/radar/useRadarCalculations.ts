@@ -1153,12 +1153,7 @@ export function useRadarCalculations() {
         }
       }
       
-      // For speed change, select the solution with highest speed (smallest deviation)
-      const validSolutions = possibleSolutions.filter(s => s.solutionValid);
-      if (validSolutions.length > 0) {
-        // Sort by speed (highest first - deviation is ownSpeed - candidateSpeed, so smallest deviation = highest speed)
-        validSolutions.sort((a, b) => a.deviation - b.deviation);
-      }
+      // Note: solution selection happens after this block
       
     } else {
       // ==========================================================================
@@ -1220,13 +1215,21 @@ export function useRadarCalculations() {
     let selectedSolution: ManeuverSolution | undefined;
     
     const validSolutions = possibleSolutions.filter(s => s.solutionValid);
+    console.log('[Maneuver] Valid solutions:', validSolutions.length, 'of', possibleSolutions.length, 'total');
+    
     if (validSolutions.length > 0) {
       // Sort by deviation (smallest first)
+      // For course change: smaller deviation = less turning
+      // For speed change: smaller deviation (ownSpeed - candidateSpeed) = higher speed
       validSolutions.sort((a, b) => a.deviation - b.deviation);
       selectedSolution = validSolutions[0];
+      console.log('[Maneuver] Selected valid solution with deviation:', selectedSolution.deviation.toFixed(2));
     } else if (possibleSolutions.length > 0) {
-      // Fallback to any solution
+      // Fallback to any solution (even if not on segment)
+      // Sort to get best candidate
+      possibleSolutions.sort((a, b) => a.deviation - b.deviation);
       selectedSolution = possibleSolutions[0];
+      console.log('[Maneuver] WARNING: Using invalid solution with deviation:', selectedSolution.deviation.toFixed(2));
     }
     
     // If still no solution, create a fallback
