@@ -1009,7 +1009,115 @@ export function useRadarCalculations() {
     console.log('[Maneuver] mpoint:', mpoint, 'mdistance:', mdistance);
     
     // ==========================================================================
-    // Step 2: Calculate tangent to desired CPA circle
+    // Step 2: Handle CPA_FROM_COURSE/SPEED mode (user specifies course/speed directly)
+    // Port of radar_calculate_new_cpa() from radar.c
+    // 
+    // When maneuverByCPA is false, user enters course/speed and we calculate resulting CPA
+    // ==========================================================================
+    
+    if (!maneuverByCPA) {
+      console.log('[Maneuver] CPA_FROM mode: calculating CPA from user-specified course/speed');
+      
+      // Use user-provided course/speed
+      const userCourse = maneuverType === 'course' ? newCourse : ownCourse;
+      const userSpeed = maneuverType === 'speed' ? newSpeed : ownSpeed;
+      
+      console.log('[Maneuver] User course:', userCourse, 'User speed:', userSpeed);
+      
+      // Calculate new travel distance during observation interval
+      const newL = userSpeed * (target.deltaTime / 60);
+      
+      // Calculate xpoint = p0_sub_own + new_velocity
+      const newOwnVec = polarToCartesian(userCourse, newL);
+      const xpoint = vectorAdd(p0SubOwn, newOwnVec);
+      
+      console.log('[Maneuver] xpoint:', xpoint);
+      
+      // Calculate new relative motion direction: course from xpoint to sight[1]
+      const relVec = vectorSubtract(pos1, xpoint);
+      const { bearing: newKBr, distance: relDist } = cartesianToPolar(relVec);
+      const newVBr = relDist / (target.deltaTime / 60); // Relative speed
+      
+      console.log('[Maneuver] New KBr:', newKBr, 'New vBr:', newVBr);
+      
+      // Calculate CPA as perpendicular distance from origin to new relative motion line
+      // Line passes through mpoint with direction newKBr
+      // CPA = perpendicular distance from origin to this line
+      
+      // Use the formula: distance from point to line
+      // Line through mpoint with direction newKBr
+      const newKBrRad = degToRad(newKBr);
+      const dirX = Math.sin(newKBrRad);
+      const dirY = Math.cos(newKBrRad);
+      
+      // Perpendicular distance from origin to line through mpoint with direction (dirX, dirY)
+      // d = |mpoint × dir| / |dir| where × is cross product
+      // For 2D: cross product = mpoint.x * dirY - mpoint.y * dirX
+      const crossProduct = Math.abs(mpoint.x * dirY - mpoint.y * dirX);
+      const calculatedCPA = crossProduct; // |dir| = 1 since it's a unit direction
+      
+      // New CPA point is the perpendicular projection of origin onto the line
+      // newCpa = mpoint + t * dir where t = -dot(mpoint, dir) / |dir|²
+      const dotProduct = mpoint.x * dirX + mpoint.y * dirY;
+      const t = -dotProduct; // |dir|² = 1
+      const newCpaPoint: VectorXY = {
+        x: mpoint.x + t * dirX,
+        y: mpoint.y + t * dirY
+      };
+      
+      console.log('[Maneuver] Calculated CPA:', calculatedCPA, 'CPA point:', newCpaPoint);
+      
+      // Calculate after-maneuver values
+      const newPCPA = cartesianToPolar(newCpaPoint).bearing;
+      const newSPCPA = normalizeAngle(newPCPA - userCourse);
+      const newTCPA = newVBr > 0 ? (vectorMagnitude(vectorSubtract(mpoint, newCpaPoint)) / newVBr) * 60 : 0;
+      const newTCPA_clock = target.time[1] + Math.round(newTCPA);
+      
+      // Bow crossing calculations
+      const newHaveCrossing = Math.abs(calculatedCPA) < mdistance && newVBr > 0;
+      let newBCR = 0;
+      let newBCT = 0;
+      let newBCt = 0;
+      if (newHaveCrossing) {
+        // Simplified BCR calculation
+        newBCR = calculatedCPA > 0 ? calculatedCPA : -calculatedCPA;
+        newBCT = newTCPA;
+        newBCt = newTCPA_clock;
+      }
+      
+      // Delta (change amount)
+      const delta = maneuverType === 'course' 
+        ? normalizeAngleSigned(userCourse - ownCourse)
+        : userSpeed - ownSpeed;
+      
+      // New RaSP
+      const newRaSP = normalizeAngle(cartesianToPolar(mpoint).bearing - userCourse);
+      
+      return {
+        success: true,
+        newCPA: calculatedCPA,
+        requiredCourse: maneuverType === 'course' ? userCourse : undefined,
+        requiredSpeed: maneuverType === 'speed' ? userSpeed : undefined,
+        newKBr,
+        newVBr,
+        delta,
+        newRaSP,
+        newTCPA,
+        newPCPA,
+        newSPCPA,
+        newTCPA_clock,
+        newHaveCrossing,
+        newBCR,
+        newBCT,
+        newBCt,
+        timeToManeuver: 0, // Not applicable in this mode
+        courseChange: maneuverType === 'course' ? delta : undefined,
+        maneuverDistance: mdistance
+      };
+    }
+    
+    // ==========================================================================
+    // Step 2b: Calculate tangent to desired CPA circle (CPA-based mode)
     // Port of radar_calculate_new_course() from radar.c
     // 
     // Formula:
