@@ -486,8 +486,8 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
    * Shows the rotation from old course to new course
    * 
    * Original C code uses:
-   *   angle1 = -fmod(crs + 270.0, 360.0)  <- start angle
-   *   angle2 = -direction * fmod(360.0 + direction * (ncourse - own_course), 360.0)  <- DELTA angle
+   *   angle1 = -fmod(crs + 270.0, 360.0)  <- start angle (in GDK degrees)
+   *   angle2 = delta (sweep angle)
    */
   function drawCourseChangeArc(
     cx: number,
@@ -505,24 +505,26 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]); // Dashed arc like in original
     
-    // Calculate start angle like original: -fmod(crs + 270.0, 360.0)
-    // In course-up mode, crs = 0; in north-up mode, crs = own_course
+    // In course-up mode, the heading is always up (0°), so the arc starts there
+    // In north-up mode, the arc starts at own course
     const crs = northUp ? ownCourse : 0;
-    const startAngleDeg = -((crs + 270) % 360);
-    const startRad = degToRad(startAngleDeg);
     
-    // Calculate delta angle like original:
-    // -direction * fmod(360.0 + direction * (ncourse - own_course), 360.0)
-    // courseChange = ncourse - own_course
-    const direction = courseChange > 0 ? 1 : -1; // starboard = 1, port = -1
-    const deltaDeg = -direction * ((360 + direction * courseChange) % 360);
-    const deltaRad = degToRad(deltaDeg);
+    // Convert nautical angle to canvas angle
+    // Nautical: 0=North, clockwise positive
+    // Canvas: 0=East, counter-clockwise positive
+    // So nautical N (0°) = canvas 90° (up)
+    // Conversion: canvas = 90 - nautical
+    const startAngleCanvas = 90 - crs;
+    const endAngleCanvas = 90 - (crs + courseChange);
     
-    // Draw arc using delta approach
-    const endRad = startRad + deltaRad;
+    const startRad = degToRad(startAngleCanvas);
+    const endRad = degToRad(endAngleCanvas);
     
-    // Determine arc direction based on delta sign
-    const anticlockwise = deltaRad < 0;
+    // For starboard turn (positive courseChange): we turn clockwise in nautical terms
+    // which is counter-clockwise in canvas terms (anticlockwise=true)
+    // For port turn (negative courseChange): we turn counter-clockwise in nautical
+    // which is clockwise in canvas terms (anticlockwise=false)
+    const anticlockwise = courseChange > 0;
     
     ctx.beginPath();
     ctx.arc(cx, cy, radius, startRad, endRad, anticlockwise);
@@ -980,9 +982,9 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       
       // ==========================================================================
       // Draw line from own ship to new CPA (perpendicular to new relative motion)
-      // This shows the new CPA distance
+      // This shows the new CPA distance - use same color as original CPA (red)
       // ==========================================================================
-      ctx.strokeStyle = COLORS.CPA_LINE;
+      ctx.strokeStyle = COLORS.CPA_MARKER;
       ctx.lineWidth = 1.5;
       ctx.setLineDash([]);
       ctx.beginPath();
