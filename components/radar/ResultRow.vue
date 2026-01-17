@@ -41,8 +41,10 @@ const formattedValue = computed(() => {
   
   switch (props.format) {
     case 'bearing':
-      // Format bearing with leading zeros (e.g., 007.8°)
-      formatted = num.toFixed(dec).padStart(dec + 4, '0')
+      // Format bearing with leading zeros (e.g., 007.8° or 007°)
+      // For integers (dec=0): 3 digits, for decimals: 3 digits + decimal point + decimal places
+      const padWidth = dec > 0 ? 4 + dec : 3
+      formatted = num.toFixed(dec).padStart(padWidth, '0')
       break
     case 'clock':
       // Format as HH:MM
@@ -51,8 +53,10 @@ const formattedValue = computed(() => {
       formatted = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`
       break
     case 'delta':
-      // Format with +/- sign
-      formatted = num >= 0 ? `+${num.toFixed(dec)}` : num.toFixed(dec)
+      // Format with +/- sign and leading zeros (e.g., +007.8° or -007.8°)
+      const deltaWidth = dec > 0 ? 4 + dec : 3
+      const absFormatted = Math.abs(num).toFixed(dec).padStart(deltaWidth, '0')
+      formatted = num >= 0 ? `+${absFormatted}` : `-${absFormatted}`
       break
     default:
       formatted = num.toFixed(dec)
