@@ -1272,9 +1272,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
   }
   
   /**
-   * Draw mid-arrow marker for VECTOR_TRUE style (TWO arrows in >> pattern)
-   * Port of radar_mark_vector for VECTOR_TRUE case from radar.c
-   * C code draws TWO triangles: POLY_TRUE_ARROW0 and POLY_TRUE_ARROW1
+   * Draw mid-arrow marker for VECTOR_TRUE style (single arrow)
    */
   function drawMidArrowTrue(
     x1: number,
@@ -1290,7 +1288,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     const dy = y2 - y1;
     const l = Math.sqrt(dx * dx + dy * dy);
     
-    if (l < 18) return; // Too short to draw arrows
+    if (l < 10) return; // Too short to draw arrow
     
     const alpha = Math.atan2(dy, dx);
     const sina = Math.sin(alpha);
@@ -1302,37 +1300,18 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     
     ctx.fillStyle = color;
     
-    // FIRST ARROW (POLY_TRUE_ARROW0) - front arrow
-    // C code: sx = cx + 8.0 * cosa, ex = cx - 0.66 * cosa
-    {
-      const sx = cx + 8.0 * cosa;
-      const sy = cy + 8.0 * sina;
-      const ex = cx - 0.66 * cosa;
-      const ey = cy - 0.66 * sina;
-      
-      ctx.beginPath();
-      ctx.moveTo(ex - 4.0 * sina, ey + 4.0 * cosa);
-      ctx.lineTo(sx, sy);
-      ctx.lineTo(ex + 4.0 * sina, ey - 4.0 * cosa);
-      ctx.closePath();
-      ctx.fill();
-    }
+    // Single arrow (same style as own ship arrow)
+    const sx = cx + 8.0 * cosa;
+    const sy = cy + 8.0 * sina;
+    const ex = cx - 0.66 * cosa;
+    const ey = cy - 0.66 * sina;
     
-    // SECOND ARROW (POLY_TRUE_ARROW1) - back arrow
-    // C code: sx = cx + 0.0 * cosa, ex = cx - 8.66 * cosa
-    {
-      const sx = cx + 0.0 * cosa;
-      const sy = cy + 0.0 * sina;
-      const ex = cx - 8.66 * cosa;
-      const ey = cy - 8.66 * sina;
-      
-      ctx.beginPath();
-      ctx.moveTo(ex - 4.0 * sina, ey + 4.0 * cosa);
-      ctx.lineTo(sx, sy);
-      ctx.lineTo(ex + 4.0 * sina, ey - 4.0 * cosa);
-      ctx.closePath();
-      ctx.fill();
-    }
+    ctx.beginPath();
+    ctx.moveTo(ex - 4.0 * sina, ey + 4.0 * cosa);
+    ctx.lineTo(sx, sy);
+    ctx.lineTo(ex + 4.0 * sina, ey - 4.0 * cosa);
+    ctx.closePath();
+    ctx.fill();
   }
   
   // ==========================================================================
