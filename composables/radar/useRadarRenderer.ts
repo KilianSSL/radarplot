@@ -1080,8 +1080,13 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       ctx.stroke();
       ctx.setLineDash([]);
       
-      // Draw arrow on new own ship vector (single arrow like POLY_NEW_OWN_ARROW)
-      drawMidArrowOwn(apexX, apexY, xpointX, xpointY, COLORS.OWN_SHIP);
+      // Draw arrow on new own ship vector ONLY for course changes
+      // For speed changes, the vector points in the same direction as the old one,
+      // so the arrow would overlap. Original C code: radar_mark_vector only called
+      // for MANEUVER_COURSE_FROM_CPA and MANEUVER_CPA_FROM_COURSE
+      if (state.maneuverType === 'course') {
+        drawMidArrowOwn(apexX, apexY, xpointX, xpointY, COLORS.OWN_SHIP);
+      }
       
       // ==========================================================================
       // Draw course change arc (ARC_COURSE) - only for course change maneuvers
