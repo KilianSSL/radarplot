@@ -193,7 +193,7 @@
           v-if="r.newVBr !== undefined"
           :label="$t('results.srmShort')"
           :tooltip="$t('results.srmTooltip')"
-          :value="r.newVBr"
+          :value="Math.round(r.newVBr * 10) / 10"
           unit="kn"
           label-class="text-gray-500 dark:text-gray-500"
           value-class="text-gray-900 dark:text-white"
@@ -449,8 +449,9 @@ const courseOrSpeedValue = computed({
     } else {
       // Speed change mode
       if (radarStore.maneuverByCPA) {
-        // Show calculated required speed
-        return radarStore.maneuverResult?.requiredSpeed ?? radarStore.newSpeed
+        // Show calculated required speed (rounded to 1 decimal)
+        const speed = radarStore.maneuverResult?.requiredSpeed ?? radarStore.newSpeed
+        return Math.round(speed * 10) / 10
       } else {
         // User input mode
         return radarStore.newSpeed
