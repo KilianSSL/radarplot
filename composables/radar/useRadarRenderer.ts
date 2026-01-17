@@ -781,9 +781,9 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         // Extend relative motion vector forward toward CPA
         // C code: radar_set_vector(radar, &s->vectors[VECTOR_REL_EXT], ...)
         if (target.haveCPA) {
-          const cpaX = cx + target.cpa.x * pixelsPerNM;
-          const cpaY = cy - target.cpa.y * pixelsPerNM;
-          drawVector(pos1.x, pos1.y, cpaX, cpaY, COLORS.RELATIVE_MOTION, 1, [3, 3]);
+          // Use trueToCanvas for Course Up support
+          const cpaPos = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
+          drawVector(pos1.x, pos1.y, cpaPos.x, cpaPos.y, COLORS.RELATIVE_MOTION, 1, [3, 3]);
         }
       }
     }
@@ -791,8 +791,10 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     // Draw CPA marker and line from center (perpendicular to target track)
     // C code: radar_set_vector(radar, &s->vectors[VECTOR_CPA], s->cpa_gc, radar->cx, radar->cy, x, y);
     if (target.haveCPA && target.CPA >= 0) {
-      const cpaX = cx + target.cpa.x * pixelsPerNM;
-      const cpaY = cy - target.cpa.y * pixelsPerNM;
+      // Use trueToCanvas for Course Up support
+      const cpaCanvas = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
+      const cpaX = cpaCanvas.x;
+      const cpaY = cpaCanvas.y;
       
       // Draw perpendicular line from center (own position) to CPA point
       // This shows the closest point of approach on the target's relative track
@@ -958,9 +960,8 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       
       // Add original CPA line if exists
       if (target.haveCPA) {
-        const origCpaX = cx + target.cpa.x * pixelsPerNM;
-        const origCpaY = cy - target.cpa.y * pixelsPerNM;
-        newCpaLinesToAvoid.push({ x1: cx, y1: cy, x2: origCpaX, y2: origCpaY });
+        const origCpaPos = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
+        newCpaLinesToAvoid.push({ x1: cx, y1: cy, x2: origCpaPos.x, y2: origCpaPos.y });
       }
       
       // Add original relative motion line if exists
@@ -980,10 +981,8 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       
       // Also avoid original CPA marker position
       if (target.haveCPA) {
-        newCpaPointsToAvoid.push({ 
-          x: cx + target.cpa.x * pixelsPerNM, 
-          y: cy - target.cpa.y * pixelsPerNM 
-        });
+        const origCpaAvoidPos = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
+        newCpaPointsToAvoid.push({ x: origCpaAvoidPos.x, y: origCpaAvoidPos.y });
       }
       
       const newCpaBestPos = findBestLabelPosition(newCpaX, newCpaY, 30, newCpaLinesToAvoid, newCpaPointsToAvoid);
