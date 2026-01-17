@@ -62,13 +62,14 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">&nbsp;</label>
           <UInput
-            v-model="bearing0"
+            v-model="bearing0Input"
             type="text"
             inputmode="numeric"
             pattern="[0-9]*"
             maxlength="3"
             size="sm"
             class="font-mono w-full"
+            @blur="onBearing0Blur"
           >
             <template #trailing>
               <span class="text-sm text-gray-500 dark:text-gray-400">°</span>
@@ -80,13 +81,14 @@
         <template v-if="bearingType0 === 'rasp'">
           <UFormField :label="$t('observation.courseOffset')">
             <UInput
-              v-model="courseOffset0"
+              v-model="courseOffset0Input"
               type="text"
               inputmode="numeric"
               pattern="[0-9]*"
               maxlength="3"
               size="sm"
               class="font-mono w-full"
+              @blur="onCourseOffset0Blur"
             >
               <template #trailing>
                 <span class="text-sm text-gray-500 dark:text-gray-400">°</span>
@@ -160,13 +162,14 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">&nbsp;</label>
           <UInput
-            v-model="bearing1"
+            v-model="bearing1Input"
             type="text"
             inputmode="numeric"
             pattern="[0-9]*"
             maxlength="3"
             size="sm"
             class="font-mono w-full"
+            @blur="onBearing1Blur"
           >
             <template #trailing>
               <span class="text-sm text-gray-500 dark:text-gray-400">°</span>
@@ -178,13 +181,14 @@
         <template v-if="bearingType1 === 'rasp'">
           <UFormField :label="$t('observation.courseOffset')">
             <UInput
-              v-model="courseOffset1"
+              v-model="courseOffset1Input"
               type="text"
               inputmode="numeric"
               pattern="[0-9]*"
               maxlength="3"
               size="sm"
               class="font-mono w-full"
+              @blur="onCourseOffset1Blur"
             >
               <template #trailing>
                 <span class="text-sm text-gray-500 dark:text-gray-400">°</span>
@@ -381,7 +385,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRadarStore } from '~/stores/radarStore'
 import { timeStringToMinutes, minutesToTimeString } from '~/utils/radarConstants'
 
@@ -559,35 +563,45 @@ const parseDegrees = (value: string) => {
   return isNaN(num) ? 0 : Math.max(0, Math.min(359, num))
 }
 
-// Bearing 0 - formatted as 3-digit string
-const bearing0 = computed({
-  get: () => formatDegrees(target.value?.bearing[0] ?? 0),
-  set: (value: string) => {
-    radarStore.updateTargetObservation(props.targetIndex, 0, { bearing: parseDegrees(value) })
-  }
-})
+// Local refs for degree inputs (allows typing without immediate formatting)
+const bearing0Input = ref(formatDegrees(target.value?.bearing[0] ?? 0))
+const bearing1Input = ref(formatDegrees(target.value?.bearing[1] ?? 0))
+const courseOffset0Input = ref(formatDegrees(target.value?.bearingCourseOffset[0] ?? 0))
+const courseOffset1Input = ref(formatDegrees(target.value?.bearingCourseOffset[1] ?? 0))
 
-// Bearing 1 - formatted as 3-digit string
-const bearing1 = computed({
-  get: () => formatDegrees(target.value?.bearing[1] ?? 0),
-  set: (value: string) => {
-    radarStore.updateTargetObservation(props.targetIndex, 1, { bearing: parseDegrees(value) })
-  }
-})
+// Watch for external changes to update local refs
+watch(() => target.value?.bearing[0], (val) => {
+  bearing0Input.value = formatDegrees(val ?? 0)
+}, { immediate: true })
+watch(() => target.value?.bearing[1], (val) => {
+  bearing1Input.value = formatDegrees(val ?? 0)
+}, { immediate: true })
+watch(() => target.value?.bearingCourseOffset[0], (val) => {
+  courseOffset0Input.value = formatDegrees(val ?? 0)
+}, { immediate: true })
+watch(() => target.value?.bearingCourseOffset[1], (val) => {
+  courseOffset1Input.value = formatDegrees(val ?? 0)
+}, { immediate: true })
 
-// Course offset 0 - formatted as 3-digit string
-const courseOffset0 = computed({
-  get: () => formatDegrees(target.value?.bearingCourseOffset[0] ?? 0),
-  set: (value: string) => {
-    radarStore.updateTargetObservation(props.targetIndex, 0, { bearingCourseOffset: parseDegrees(value) })
-  }
-})
-
-// Course offset 1 - formatted as 3-digit string
-const courseOffset1 = computed({
-  get: () => formatDegrees(target.value?.bearingCourseOffset[1] ?? 0),
-  set: (value: string) => {
-    radarStore.updateTargetObservation(props.targetIndex, 1, { bearingCourseOffset: parseDegrees(value) })
-  }
-})
+// Blur handlers - parse, save, and re-format
+function onBearing0Blur() {
+  const value = parseDegrees(bearing0Input.value)
+  radarStore.updateTargetObservation(props.targetIndex, 0, { bearing: value })
+  bearing0Input.value = formatDegrees(value)
+}
+function onBearing1Blur() {
+  const value = parseDegrees(bearing1Input.value)
+  radarStore.updateTargetObservation(props.targetIndex, 1, { bearing: value })
+  bearing1Input.value = formatDegrees(value)
+}
+function onCourseOffset0Blur() {
+  const value = parseDegrees(courseOffset0Input.value)
+  radarStore.updateTargetObservation(props.targetIndex, 0, { bearingCourseOffset: value })
+  courseOffset0Input.value = formatDegrees(value)
+}
+function onCourseOffset1Blur() {
+  const value = parseDegrees(courseOffset1Input.value)
+  radarStore.updateTargetObservation(props.targetIndex, 1, { bearingCourseOffset: value })
+  courseOffset1Input.value = formatDegrees(value)
+}
 </script>

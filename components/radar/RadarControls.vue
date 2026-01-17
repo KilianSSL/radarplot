@@ -64,13 +64,14 @@
         <!-- Course Input -->
         <UFormField :label="$t('radar.course')">
           <UInput
-            v-model="ownCourseFormatted"
+            v-model="ownCourseInput"
             type="text"
             inputmode="numeric"
             pattern="[0-9]*"
             maxlength="3"
             size="sm"
             class="font-mono w-full"
+            @blur="onOwnCourseBlur"
           >
             <template #trailing>
               <span class="text-sm text-gray-500 dark:text-gray-400">°</span>
@@ -100,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRadarStore } from '~/stores/radarStore'
 import { RADAR_RANGES } from '~/utils/radarConstants'
 
@@ -141,13 +142,20 @@ const parseDegrees = (value: string) => {
   return isNaN(num) ? 0 : Math.max(0, Math.min(359, num))
 }
 
-// Own course model - formatted as 3-digit string
-const ownCourseFormatted = computed({
-  get: () => formatDegrees(radarStore.ownCourse),
-  set: (value: string) => {
-    radarStore.setOwnCourse(parseDegrees(value))
-  }
-})
+// Own course - local ref for typing, format on blur
+const ownCourseInput = ref(formatDegrees(radarStore.ownCourse))
+
+// Watch for external changes
+watch(() => radarStore.ownCourse, (val) => {
+  ownCourseInput.value = formatDegrees(val)
+}, { immediate: true })
+
+// Format and save on blur
+function onOwnCourseBlur() {
+  const value = parseDegrees(ownCourseInput.value)
+  radarStore.setOwnCourse(value)
+  ownCourseInput.value = formatDegrees(value)
+}
 
 // Own speed model
 const ownSpeed = computed({

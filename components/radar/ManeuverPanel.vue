@@ -113,7 +113,7 @@
         <div class="flex-1">
           <UInput
             v-if="isCourseChange"
-            v-model="courseValueFormatted"
+            v-model="courseInput"
             type="text"
             inputmode="numeric"
             pattern="[0-9]*"
@@ -122,6 +122,7 @@
             class="font-mono w-full"
             :disabled="maneuverByCPA"
             :class="{ 'opacity-60': maneuverByCPA }"
+            @blur="onCourseBlur"
           >
             <template #trailing>
               <span class="text-sm text-gray-500 dark:text-gray-400">°</span>
@@ -314,7 +315,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRadarStore } from '~/stores/radarStore'
 import { timeStringToMinutes, minutesToTimeString } from '~/utils/radarConstants'
 
@@ -402,21 +403,28 @@ const parseDegrees = (value: string) => {
   return isNaN(num) ? 0 : Math.max(0, Math.min(359, num))
 }
 
-// Formatted course value for input display (3 digits with leading zeros)
-const courseValueFormatted = computed({
-  get: () => {
-    if (radarStore.maneuverByCPA) {
-      // Show calculated required course
-      return formatDegrees(radarStore.maneuverResult?.requiredCourse ?? radarStore.newCourse)
-    } else {
-      // User input mode
-      return formatDegrees(radarStore.newCourse)
-    }
-  },
-  set: (value: string) => {
-    radarStore.setNewCourse(parseDegrees(value))
+// Local ref for course input - allows typing without immediate formatting
+const courseInput = ref(formatDegrees(radarStore.newCourse))
+
+// Watch for external changes (e.g., calculated result when maneuverByCPA is true)
+watch([
+  () => radarStore.newCourse,
+  () => radarStore.maneuverByCPA,
+  () => radarStore.maneuverResult?.requiredCourse
+], () => {
+  if (radarStore.maneuverByCPA) {
+    courseInput.value = formatDegrees(radarStore.maneuverResult?.requiredCourse ?? radarStore.newCourse)
+  } else {
+    courseInput.value = formatDegrees(radarStore.newCourse)
   }
-})
+}, { immediate: true })
+
+// Format and save on blur
+function onCourseBlur() {
+  const value = parseDegrees(courseInput.value)
+  radarStore.setNewCourse(value)
+  courseInput.value = formatDegrees(value)
+}
 
 // Combined course/speed value that shows calculated result when maneuverByCPA is true,
 // or allows user input when maneuverByCPA is false
