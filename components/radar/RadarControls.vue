@@ -64,11 +64,11 @@
         <!-- Course Input -->
         <UFormField :label="$t('radar.course')">
           <UInput
-            v-model.number="ownCourse"
-            type="number"
-            :min="0"
-            :max="359"
-            step="1"
+            v-model="ownCourseFormatted"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="3"
             size="sm"
             class="font-mono w-full"
           >
@@ -134,12 +134,18 @@ const showHeading = computed({
   set: () => radarStore.toggleHeading()
 })
 
-// Own course model
-const ownCourse = computed({
-  get: () => radarStore.ownCourse,
-  set: (value: number) => {
-    const normalized = ((value % 360) + 360) % 360
-    radarStore.setOwnCourse(normalized)
+// Helper to format degrees as 3-digit string with leading zeros
+const formatDegrees = (value: number) => String(Math.round(value) % 360).padStart(3, '0')
+const parseDegrees = (value: string) => {
+  const num = parseInt(value, 10)
+  return isNaN(num) ? 0 : Math.max(0, Math.min(359, num))
+}
+
+// Own course model - formatted as 3-digit string
+const ownCourseFormatted = computed({
+  get: () => formatDegrees(radarStore.ownCourse),
+  set: (value: string) => {
+    radarStore.setOwnCourse(parseDegrees(value))
   }
 })
 

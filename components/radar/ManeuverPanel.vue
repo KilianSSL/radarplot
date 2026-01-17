@@ -113,11 +113,11 @@
         <div class="flex-1">
           <UInput
             v-if="isCourseChange"
-            v-model.number="courseOrSpeedValue"
-            type="number"
-            :min="0"
-            :max="359"
-            step="1"
+            v-model="courseValueFormatted"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="3"
             size="sm"
             class="font-mono w-full"
             :disabled="maneuverByCPA"
@@ -169,7 +169,7 @@
           v-if="r.requiredSpeed !== undefined && !isCourseChange"
           :label="$t('results.speedChangeShort')"
           :tooltip="$t('results.speedChangeTooltip')"
-          :value="radarStore.ownSpeed - r.requiredSpeed"
+          :value="Math.round((radarStore.ownSpeed - r.requiredSpeed) * 10) / 10"
           :unit="(radarStore.ownSpeed - r.requiredSpeed) > 0 ? 'kn ↓' : 'kn ↑'"
           label-class="text-gray-500 dark:text-gray-500"
           :value-class="(radarStore.ownSpeed - r.requiredSpeed) > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'"
@@ -394,6 +394,29 @@ const newSpeed = computed({
 
 // Helper computeds
 const isCourseChange = computed(() => radarStore.maneuverType === 'course')
+
+// Helper to format degrees as 3-digit string with leading zeros
+const formatDegrees = (value: number) => String(Math.round(value) % 360).padStart(3, '0')
+const parseDegrees = (value: string) => {
+  const num = parseInt(value, 10)
+  return isNaN(num) ? 0 : Math.max(0, Math.min(359, num))
+}
+
+// Formatted course value for input display (3 digits with leading zeros)
+const courseValueFormatted = computed({
+  get: () => {
+    if (radarStore.maneuverByCPA) {
+      // Show calculated required course
+      return formatDegrees(radarStore.maneuverResult?.requiredCourse ?? radarStore.newCourse)
+    } else {
+      // User input mode
+      return formatDegrees(radarStore.newCourse)
+    }
+  },
+  set: (value: string) => {
+    radarStore.setNewCourse(parseDegrees(value))
+  }
+})
 
 // Combined course/speed value that shows calculated result when maneuverByCPA is true,
 // or allows user input when maneuverByCPA is false
