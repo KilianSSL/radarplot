@@ -533,6 +533,10 @@ const bearingType0 = computed({
   get: () => target.value?.bearingType[0] ?? 'rakrp',
   set: (value: 'rasp' | 'rakrp') => {
     radarStore.updateTargetObservation(props.targetIndex, 0, { bearingType: value })
+    // Auto-fill course offset with own ship's course when switching to RaSP
+    if (value === 'rasp') {
+      radarStore.updateTargetObservation(props.targetIndex, 0, { bearingCourseOffset: radarStore.ownCourse })
+    }
   }
 })
 
@@ -541,6 +545,10 @@ const bearingType1 = computed({
   get: () => target.value?.bearingType[1] ?? 'rakrp',
   set: (value: 'rasp' | 'rakrp') => {
     radarStore.updateTargetObservation(props.targetIndex, 1, { bearingType: value })
+    // Auto-fill course offset with own ship's course when switching to RaSP
+    if (value === 'rasp') {
+      radarStore.updateTargetObservation(props.targetIndex, 1, { bearingCourseOffset: radarStore.ownCourse })
+    }
   }
 })
 
