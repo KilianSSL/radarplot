@@ -1382,11 +1382,21 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     ctx.scale(zoom, zoom);
     ctx.translate(-centerX + panX, -centerY + panY);
     
-    // Draw all content with transformation applied
+    // Draw background (grid, range rings, etc) - no clipping needed
     drawBackground(renderState);
+    
+    // Apply circular clip mask for foreground elements (like original radar.c)
+    // This keeps arcs and vectors within the radar circle
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(renderState.centerX, renderState.centerY, renderState.radiusPixels + 20, 0, Math.PI * 2);
+    ctx.clip();
+    
+    // Draw foreground with clipping applied
     drawForeground(renderState);
     
-    ctx.restore();
+    ctx.restore(); // Restore clip
+    ctx.restore(); // Restore zoom/pan
   }
   
   // ==========================================================================
