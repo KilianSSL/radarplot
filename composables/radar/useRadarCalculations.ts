@@ -1096,6 +1096,12 @@ export function useRadarCalculations() {
       // ==========================================================================
       console.log('[Maneuver] Using SPEED CHANGE algorithm (line-line intersection)');
       
+      console.log('[Maneuver] SPEED CHANGE - Input data:');
+      console.log('  p0SubOwn:', p0SubOwn);
+      console.log('  pos0 (sight[0]):', pos0);
+      console.log('  pos1 (sight[1]):', pos1);
+      console.log('  m (tangent distance):', m);
+      
       for (const [testKBr, testNewCpa] of [[KBr0, newCpaPoint0], [KBr1, newCpaPoint1]] as [number, VectorXY][]) {
         // Tangent offset: m × direction(KBr)
         const tangentOffset = polarToCartesian(testKBr, m);
@@ -1104,13 +1110,18 @@ export function useRadarCalculations() {
         // This is the adjusted position for the new relative motion line
         const v0 = vectorSubtract(pos1, tangentOffset);
         
+        console.log('[Maneuver] Testing KBr:', testKBr.toFixed(1));
+        console.log('  tangentOffset:', tangentOffset);
+        console.log('  v0:', v0);
+        console.log('  Line 1: p0SubOwn -> pos0');
+        console.log('  Line 2: pos1 -> v0');
+        
         // Find intersection of:
         // Line 1: p0_sub_own → sight[0] (the velocity triangle base - all possible own speeds)
         // Line 2: sight[1] → v0 (the adjusted relative motion line)
         const crossing = linesCrossing(p0SubOwn, pos0, pos1, v0);
         
-        console.log('[Maneuver] Testing KBr:', testKBr.toFixed(1), 
-                    'crossing:', crossing ? 'found' : 'none');
+        console.log('  crossing result:', crossing);
         
         if (crossing) {
           // Check if crossing is on the line segment (valid speed range)
