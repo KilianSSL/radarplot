@@ -110,6 +110,21 @@
         </aside>
       </div>
     </main>
+    
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-3 px-4 lg:px-6 shrink-0">
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <span>{{ $t('app.credits') }}</span>
+        <a
+          href="http://brainaid.de/people/ecd/radarplot"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-primary hover:underline"
+        >
+          brainaid.de/people/ecd/radarplot
+        </a>
+      </div>
+    </footer>
   </div>
 </template>
 

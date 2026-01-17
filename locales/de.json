@@ -2,7 +2,8 @@
   "app": {
     "title": "Radarplot",
     "subtitle": "Nautisches Radar-Plotting-Hilfsmittel",
-    "newCalculation": "Neu"
+    "newCalculation": "Neu",
+    "credits": "Basierend auf Radarplot von Erhard Czemmel –"
   },
   "menu": {
     "file": "Datei",
