@@ -521,10 +521,12 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     const endRad = degToRad(endAngleCanvas);
     
     // For starboard turn (positive courseChange): we turn clockwise in nautical terms
-    // which is counter-clockwise in canvas terms (anticlockwise=true)
+    // In canvas: from 90° to 60° (for +30° turn), we need to go CLOCKWISE (short way)
+    // Canvas clockwise = anticlockwise:false
     // For port turn (negative courseChange): we turn counter-clockwise in nautical
-    // which is clockwise in canvas terms (anticlockwise=false)
-    const anticlockwise = courseChange > 0;
+    // In canvas: from 90° to 120° (for -30° turn), we need to go COUNTER-CLOCKWISE (short way)
+    // Canvas counter-clockwise = anticlockwise:true
+    const anticlockwise = courseChange < 0;
     
     ctx.beginPath();
     ctx.arc(cx, cy, radius, startRad, endRad, anticlockwise);
@@ -1382,21 +1384,11 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     ctx.scale(zoom, zoom);
     ctx.translate(-centerX + panX, -centerY + panY);
     
-    // Draw background (grid, range rings, etc) - no clipping needed
+    // Draw all content with transformation applied
     drawBackground(renderState);
-    
-    // Apply circular clip mask for foreground elements (like original radar.c)
-    // This keeps arcs and vectors within the radar circle
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(renderState.centerX, renderState.centerY, renderState.radiusPixels + 20, 0, Math.PI * 2);
-    ctx.clip();
-    
-    // Draw foreground with clipping applied
     drawForeground(renderState);
     
-    ctx.restore(); // Restore clip
-    ctx.restore(); // Restore zoom/pan
+    ctx.restore();
   }
   
   // ==========================================================================
