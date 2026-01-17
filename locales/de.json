@@ -153,6 +153,8 @@
     "afterManeuver": "Nach Manöver",
     "courseChangeShort": "ΔK",
     "courseChangeTooltip": "Erforderliche Kursänderung (+ = Steuerbord, - = Backbord)",
+    "speedChangeShort": "Δv",
+    "speedChangeTooltip": "Erforderliche Fahrtänderung (+ = reduzieren, - = erhöhen)",
     "requiredCourseShort": "K'",
     "requiredCourseTooltip": "Erforderlicher neuer Kurs nach Manöver",
     "requiredSpeedShort": "v'",

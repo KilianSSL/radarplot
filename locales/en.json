@@ -153,6 +153,8 @@
     "afterManeuver": "After Maneuver",
     "courseChangeShort": "ΔK",
     "courseChangeTooltip": "Course change required (+ = starboard, - = port)",
+    "speedChangeShort": "Δv",
+    "speedChangeTooltip": "Speed change required (+ = reduce, - = increase)",
     "requiredCourseShort": "K'",
     "requiredCourseTooltip": "Required new course after maneuver",
     "requiredSpeedShort": "v'",

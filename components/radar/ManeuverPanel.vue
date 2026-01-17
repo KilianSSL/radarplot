@@ -68,74 +68,81 @@
       />
     </div>
 
-    <!-- Goal Input (CPA or Course/Speed) -->
-    <div class="grid grid-cols-2 gap-2">
-      <div>
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-          {{ $t('maneuver.desiredCPA') }}
-        </label>
-        <UButtonGroup size="sm" class="w-full">
-          <UButton
-            :color="maneuverByCPA ? 'primary' : 'neutral'"
-            :variant="maneuverByCPA ? 'solid' : 'outline'"
-            class="flex-1"
-            @click="maneuverByCPA = true"
+    <!-- Goal Input: CPA and Course/Speed with toggle -->
+    <!-- Row 1: CPA input -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2">
+        <UButton
+          size="xs"
+          :color="maneuverByCPA ? 'primary' : 'neutral'"
+          :variant="maneuverByCPA ? 'solid' : 'ghost'"
+          class="shrink-0"
+          @click="maneuverByCPA = true"
+        >
+          {{ $t('maneuver.byCPAShort') }}
+        </UButton>
+        <div class="flex-1">
+          <UInput
+            v-model.number="desiredCPA"
+            type="number"
+            :min="0"
+            step="0.1"
+            size="sm"
+            class="font-mono w-full"
+            :disabled="!maneuverByCPA"
+            :class="{ 'opacity-60': !maneuverByCPA }"
           >
-            {{ $t('maneuver.byCPAShort') }}
-          </UButton>
-          <UButton
-            :color="!maneuverByCPA ? 'primary' : 'neutral'"
-            :variant="!maneuverByCPA ? 'solid' : 'outline'"
-            class="flex-1"
-            @click="maneuverByCPA = false"
-          >
-            {{ isCourseChange ? $t('maneuver.byCourseShort') : $t('maneuver.bySpeedShort') }}
-          </UButton>
-        </UButtonGroup>
+            <template #trailing>
+              <span class="text-sm text-gray-500 dark:text-gray-400">nm</span>
+            </template>
+          </UInput>
+        </div>
       </div>
       
-      <div>
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">&nbsp;</label>
-        <UInput
-          v-if="maneuverByCPA"
-          v-model.number="desiredCPA"
-          type="number"
-          :min="0"
-          step="0.1"
-          size="sm"
-          class="font-mono w-full"
+      <!-- Row 2: Course/Speed input -->
+      <div class="flex items-center gap-2">
+        <UButton
+          size="xs"
+          :color="!maneuverByCPA ? 'primary' : 'neutral'"
+          :variant="!maneuverByCPA ? 'solid' : 'ghost'"
+          class="shrink-0"
+          @click="maneuverByCPA = false"
         >
-          <template #trailing>
-            <span class="text-sm text-gray-500 dark:text-gray-400">nm</span>
-          </template>
-        </UInput>
-        <UInput
-          v-else-if="isCourseChange"
-          v-model.number="newCourse"
-          type="number"
-          :min="0"
-          :max="359"
-          step="1"
-          size="sm"
-          class="font-mono w-full"
-        >
-          <template #trailing>
-            <span class="text-sm text-gray-500 dark:text-gray-400">°</span>
-          </template>
-        </UInput>
-        <UInput
-          v-else
-          v-model.number="newSpeed"
-          type="number"
-          :min="0"
-          step="0.1"
-          size="sm"
-          class="font-mono w-full"
-        >
-          <template #trailing>
-            <span class="text-sm text-gray-500 dark:text-gray-400">kn</span>
-          </template>
-        </UInput>
+          {{ isCourseChange ? $t('maneuver.byCourseShort') : $t('maneuver.bySpeedShort') }}
+        </UButton>
+        <div class="flex-1">
+          <UInput
+            v-if="isCourseChange"
+            v-model.number="courseOrSpeedValue"
+            type="number"
+            :min="0"
+            :max="359"
+            step="1"
+            size="sm"
+            class="font-mono w-full"
+            :disabled="maneuverByCPA"
+            :class="{ 'opacity-60': maneuverByCPA }"
+          >
+            <template #trailing>
+              <span class="text-sm text-gray-500 dark:text-gray-400">°</span>
+            </template>
+          </UInput>
+          <UInput
+            v-else
+            v-model.number="courseOrSpeedValue"
+            type="number"
+            :min="0"
+            step="0.1"
+            size="sm"
+            class="font-mono w-full"
+            :disabled="maneuverByCPA"
+            :class="{ 'opacity-60': maneuverByCPA }"
+          >
+            <template #trailing>
+              <span class="text-sm text-gray-500 dark:text-gray-400">kn</span>
+            </template>
+          </UInput>
+        </div>
       </div>
     </div>
 
@@ -146,40 +153,27 @@
       </div>
       
       <div class="space-y-1.5 text-sm">
-        <!-- Required course/speed result -->
+        <!-- Course/Speed change amount (delta) -->
         <RadarResultRow
-          v-if="r.requiredCourse !== undefined"
-          :label="$t('results.requiredCourseShort')"
-          :tooltip="$t('results.requiredCourseTooltip')"
-          :value="r.requiredCourse"
-          unit="°"
-          label-class="text-gray-500 dark:text-gray-500"
-          value-class="font-bold text-primary-600 dark:text-primary-400"
-        />
-        
-        <RadarResultRow
-          v-if="r.courseChange !== undefined && r.requiredCourse !== undefined"
+          v-if="r.courseChange !== undefined && isCourseChange"
           :label="$t('results.courseChangeShort')"
           :tooltip="$t('results.courseChangeTooltip')"
-          :value="r.courseChange"
-          format="delta"
+          :value="Math.abs(r.courseChange)"
+          format="bearing"
           :unit="r.courseChange > 0 ? '° Stb' : '° Bb'"
-          label-class="text-gray-400 dark:text-gray-600"
+          label-class="text-gray-500 dark:text-gray-500"
           :value-class="r.courseChange > 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'"
         />
         
         <RadarResultRow
-          v-if="r.requiredSpeed !== undefined"
-          :label="$t('results.requiredSpeedShort')"
-          :tooltip="$t('results.requiredSpeedTooltip')"
-          :value="r.requiredSpeed"
-          unit="kn"
+          v-if="r.requiredSpeed !== undefined && !isCourseChange"
+          :label="$t('results.speedChangeShort')"
+          :tooltip="$t('results.speedChangeTooltip')"
+          :value="radarStore.ownSpeed - r.requiredSpeed"
+          :unit="(radarStore.ownSpeed - r.requiredSpeed) > 0 ? 'kn ↓' : 'kn ↑'"
           label-class="text-gray-500 dark:text-gray-500"
-          value-class="font-bold text-primary-600 dark:text-primary-400"
+          :value-class="(radarStore.ownSpeed - r.requiredSpeed) > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'"
         />
-        
-        <!-- Separator -->
-        <div class="border-t border-gray-100 dark:border-gray-800 my-2" />
         
         <!-- New relative motion -->
         <RadarResultRow
@@ -370,8 +364,18 @@ const maneuverByCPA = computed({
   set: (value: boolean) => radarStore.setManeuverByCPA(value)
 })
 
+// CPA value that shows user input when maneuverByCPA is true,
+// or calculated result when maneuverByCPA is false
 const desiredCPA = computed({
-  get: () => radarStore.desiredCPA,
+  get: () => {
+    if (radarStore.maneuverByCPA) {
+      // User input mode
+      return radarStore.desiredCPA
+    } else {
+      // Show calculated CPA from the maneuver result
+      return radarStore.maneuverResult?.newCPA ?? radarStore.desiredCPA
+    }
+  },
   set: (value: number) => radarStore.setDesiredCPA(value)
 })
 
@@ -387,6 +391,39 @@ const newSpeed = computed({
 
 // Helper computeds
 const isCourseChange = computed(() => radarStore.maneuverType === 'course')
+
+// Combined course/speed value that shows calculated result when maneuverByCPA is true,
+// or allows user input when maneuverByCPA is false
+const courseOrSpeedValue = computed({
+  get: () => {
+    if (isCourseChange.value) {
+      // Course change mode
+      if (radarStore.maneuverByCPA) {
+        // Show calculated required course
+        return radarStore.maneuverResult?.requiredCourse ?? radarStore.newCourse
+      } else {
+        // User input mode
+        return radarStore.newCourse
+      }
+    } else {
+      // Speed change mode
+      if (radarStore.maneuverByCPA) {
+        // Show calculated required speed
+        return radarStore.maneuverResult?.requiredSpeed ?? radarStore.newSpeed
+      } else {
+        // User input mode
+        return radarStore.newSpeed
+      }
+    }
+  },
+  set: (value: number) => {
+    if (isCourseChange.value) {
+      radarStore.setNewCourse(value)
+    } else {
+      radarStore.setNewSpeed(value)
+    }
+  }
+})
 
 const hasManeuverResults = computed(() => {
   const result = radarStore.maneuverResult
