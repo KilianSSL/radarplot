@@ -72,6 +72,7 @@
             size="sm"
             class="font-mono w-full"
             @blur="onOwnCourseBlur"
+            @focus="selectAll"
           >
             <template #trailing>
               <span class="text-sm text-gray-500 dark:text-gray-400">°</span>
@@ -140,6 +141,12 @@ const formatDegrees = (value: number) => String(Math.round(value) % 360).padStar
 const parseDegrees = (value: string) => {
   const num = parseInt(value, 10)
   return isNaN(num) ? 0 : Math.max(0, Math.min(359, num))
+}
+
+// Select all text on focus for easy replacement
+const selectAll = (event: FocusEvent) => {
+  const input = event.target as HTMLInputElement
+  input.select()
 }
 
 // Own course - local ref for typing, format on blur
