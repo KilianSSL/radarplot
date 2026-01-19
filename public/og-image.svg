@@ -52,53 +52,52 @@
     <line x1="85" y1="85" x2="435" y2="435" stroke="#00dc82" stroke-width="0.3" opacity="0.1"/>
     <line x1="435" y1="85" x2="85" y2="435" stroke="#00dc82" stroke-width="0.3" opacity="0.1"/>
     
-    <!-- Heading line with glow -->
-    <line x1="260" y1="260" x2="260" y2="25" stroke="#00dc82" stroke-width="2.5" filter="url(#glow)"/>
-    <polygon points="260,18 252,35 268,35" fill="#00dc82" filter="url(#glow)"/>
+    <!-- Heading line pointing SW (opposite of B₀ direction) with glow -->
+    <line x1="260" y1="260" x2="94" y2="426" stroke="#00dc82" stroke-width="2.5" filter="url(#glow)"/>
+    <polygon points="89,431 107,425 95,413" fill="#00dc82" filter="url(#glow)"/>
     
     <!-- Own ship position -->
     <circle cx="260" cy="260" r="6" fill="#00dc82" filter="url(#glow)"/>
     
-    <!-- Target A - realistic observation points -->
-    <!-- B₀ observation -->
+    <!-- Target observation points -->
+    <!-- B₀ observation (first bearing) -->
     <g transform="translate(380, 150)">
       <line x1="-6" y1="0" x2="6" y2="0" stroke="#f43f5e" stroke-width="2"/>
       <line x1="0" y1="-6" x2="0" y2="6" stroke="#f43f5e" stroke-width="2"/>
     </g>
-    <text x="392" y="148" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e" opacity="0.9">A₀</text>
+    <text x="392" y="148" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e" opacity="0.9">B₀</text>
     
-    <!-- B₁ observation -->
+    <!-- B₁ observation (second bearing) -->
     <g transform="translate(340, 195)">
       <line x1="-6" y1="0" x2="6" y2="0" stroke="#f43f5e" stroke-width="2"/>
       <line x1="0" y1="-6" x2="0" y2="6" stroke="#f43f5e" stroke-width="2"/>
     </g>
-    <text x="352" y="193" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e" opacity="0.9">A₁</text>
+    <text x="352" y="193" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e" opacity="0.9">B₁</text>
     
-    <!-- Relative motion vector (A₀ to A₁) - solid red -->
+    <!-- Relative motion vector (B₀ to B₁) - solid red -->
     <line x1="380" y1="150" x2="340" y2="195" stroke="#f43f5e" stroke-width="2" filter="url(#glow)"/>
     
-    <!-- Relative motion extension to CPA - dashed -->
-    <line x1="340" y1="195" x2="280" y2="262" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.7"/>
+    <!-- Relative motion extension to CPA - dashed (perpendicular intersection) -->
+    <line x1="340" y1="195" x2="240" y2="308" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.7"/>
     
-    <!-- Velocity triangle apex -->
-    <circle cx="320" cy="105" r="2" fill="#00dc82" opacity="0.6"/>
+    <!-- Velocity triangle apex (NE of B₀, consistent with SW heading) -->
+    <circle cx="422" cy="108" r="2" fill="#00dc82" opacity="0.6"/>
     
-    <!-- Own ship vector (green) - apex to B₀ - single arrow -->
-    <line x1="320" y1="105" x2="380" y2="150" stroke="#00dc82" stroke-width="2"/>
-    <!-- Arrow at midpoint: calculated from drawMidArrowOwn logic -->
-    <polygon points="344.7,128.5 354,130.5 349.5,122.1" fill="#00dc82"/>
+    <!-- Own ship vector (green) - apex to B₀ - points SW matching heading -->
+    <line x1="422" y1="108" x2="380" y2="150" stroke="#00dc82" stroke-width="2"/>
+    <!-- Single arrow at midpoint -->
+    <polygon points="400.8,123.6 397.5,132.5 406.4,129.2" fill="#00dc82"/>
     
     <!-- True motion vector (blue) - apex to B₁ - two arrows >> -->
-    <line x1="320" y1="105" x2="340" y2="195" stroke="#3b82f6" stroke-width="2"/>
-    <!-- Front arrow: tip ahead of center -->
-    <polygon points="326,150.2 331.7,157.8 333.8,148.5" fill="#3b82f6"/>
-    <!-- Back arrow: behind center -->
-    <polygon points="324.2,142.4 330,150 332,140.7" fill="#3b82f6"/>
+    <line x1="422" y1="108" x2="340" y2="195" stroke="#3b82f6" stroke-width="2"/>
+    <!-- Front arrow -->
+    <polygon points="378.6,148.3 375.5,157.3 384.4,153.7" fill="#3b82f6"/>
+    <!-- Back arrow -->
+    <polygon points="384.1,142.5 381,151.5 389.9,147.9" fill="#3b82f6"/>
     
-    <!-- CPA point and line -->
-    <circle cx="280" cy="262" r="4" fill="none" stroke="#f97316" stroke-width="2"/>
-    <line x1="260" y1="260" x2="280" y2="262" stroke="#f97316" stroke-width="1.5" opacity="0.8"/>
-    <text x="286" y="275" font-family="system-ui, sans-serif" font-size="10" fill="#f97316">CPA 0.4nm</text>
+    <!-- CPA point and line (perpendicular to relative motion) -->
+    <line x1="260" y1="260" x2="272" y2="271" stroke="#f97316" stroke-width="1.5" opacity="0.8"/>
+    <text x="248" y="290" font-family="system-ui, sans-serif" font-size="10" fill="#f97316">CPA 0.4nm</text>
     
     <!-- Range labels -->
     <text x="260" y="58" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#64748b">6</text>
