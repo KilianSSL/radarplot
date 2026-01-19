@@ -6,8 +6,92 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
     '@nuxtjs/i18n',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@vite-pwa/nuxt'
   ],
+
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'Radarplot - Maritime Radar Plotting Aid',
+      short_name: 'Radarplot',
+      description: 'Free online radar plotting tool for maritime navigation, CPA/TCPA calculation, and collision avoidance training.',
+      theme_color: '#0f172a',
+      background_color: '#0f172a',
+      display: 'standalone',
+      orientation: 'any',
+      categories: ['education', 'navigation', 'utilities'],
+      icons: [
+        {
+          src: '/favicon-32x32.png',
+          sizes: '32x32',
+          type: 'image/png'
+        },
+        {
+          src: '/icon-192.png',
+          sizes: '192x192',
+          type: 'image/png'
+        },
+        {
+          src: '/icon-512.png',
+          sizes: '512x512',
+          type: 'image/png'
+        },
+        {
+          src: '/icon-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable'
+        }
+      ]
+    },
+    workbox: {
+      // Cache all static assets
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
+      // Runtime caching strategies
+      runtimeCaching: [
+        {
+          // Cache Google Fonts
+          urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'google-fonts-cache',
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+            },
+            cacheableResponse: {
+              statuses: [0, 200]
+            }
+          }
+        },
+        {
+          urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'gstatic-fonts-cache',
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+            },
+            cacheableResponse: {
+              statuses: [0, 200]
+            }
+          }
+        }
+      ],
+      // Clean up old caches
+      cleanupOutdatedCaches: true,
+      // Skip waiting - activate new SW immediately
+      skipWaiting: true,
+      clientsClaim: true
+    },
+    // Development options
+    devOptions: {
+      enabled: false, // Disable in dev to avoid caching issues
+      type: 'module'
+    }
+  },
 
   css: [
     '~/assets/css/main.css'
@@ -78,7 +162,7 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
         { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
         { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
-        { rel: 'manifest', href: '/manifest.json' },
+        // manifest is handled by @vite-pwa/nuxt module
         
         // Fonts
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
