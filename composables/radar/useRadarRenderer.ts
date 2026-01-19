@@ -999,6 +999,19 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
           // Use trueToCanvas for Course Up support
           const cpaPos = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
           drawVector(pos1.x, pos1.y, cpaPos.x, cpaPos.y, relativeColor, 1, [3, 3]);
+          
+          // Track extension line for hover (same info as relative motion)
+          trackVector(
+            `relative_ext_${target.index}`,
+            'relative',
+            pos1.x, pos1.y, cpaPos.x, cpaPos.y,
+            { 
+              label: `${targetLetter} Relative Motion`,
+              bearing: target.KBr,
+              speed: target.vBr
+            },
+            target.index
+          );
         }
       }
     }
