@@ -1,15 +1,15 @@
 <template>
   <div 
     ref="containerRef" 
-    class="w-full h-full min-h-[300px] overflow-hidden relative touch-none"
+    class="w-full h-full min-h-[300px] overflow-hidden relative"
     @wheel.prevent="handleWheel"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
     @dblclick="resetZoom"
-    @touchstart.prevent="handleTouchStart"
-    @touchmove.prevent="handleTouchMove"
+    @touchstart="handleTouchStart"
+    @touchmove="handleTouchMove"
     @touchend="handleTouchEnd"
   >
     <canvas
@@ -360,6 +360,7 @@ function handleTouchStart(event: TouchEvent) {
   // Double-tap detection
   const now = Date.now()
   if (touches.length === 1 && now - lastTapTime.value < 300) {
+    event.preventDefault() // Prevent zoom on double-tap
     resetZoom()
     lastTapTime.value = 0
     return
@@ -367,15 +368,18 @@ function handleTouchStart(event: TouchEvent) {
   lastTapTime.value = now
   
   if (touches.length === 2) {
-    // Pinch start
+    // Pinch start - prevent page zoom
+    event.preventDefault()
     lastTouchDistance.value = getTouchDistance(touches)
     lastTouchCenter.value = getTouchCenter(touches)
   } else if (touches.length === 1 && zoom.value > MIN_ZOOM) {
-    // Pan start
+    // Pan start (only when zoomed in) - prevent page scroll
+    event.preventDefault()
     isDragging.value = true
     dragStart.value = { x: touches[0].clientX, y: touches[0].clientY }
     panStart.value = { x: panX.value, y: panY.value }
   }
+  // Single finger when not zoomed: let page scroll naturally (don't prevent default)
 }
 
 // Handle touch move
@@ -383,7 +387,9 @@ function handleTouchMove(event: TouchEvent) {
   const touches = event.touches
   
   if (touches.length === 2) {
-    // Pinch zoom
+    // Pinch zoom - prevent page zoom/scroll
+    event.preventDefault()
+    
     const newDistance = getTouchDistance(touches)
     if (lastTouchDistance.value > 0) {
       const scale = newDistance / lastTouchDistance.value
@@ -411,13 +417,16 @@ function handleTouchMove(event: TouchEvent) {
     lastTouchCenter.value = newCenter
     
   } else if (touches.length === 1 && isDragging.value) {
-    // Single finger pan
+    // Single finger pan (only when zoomed in) - prevent page scroll
+    event.preventDefault()
+    
     const dx = touches[0].clientX - dragStart.value.x
     const dy = touches[0].clientY - dragStart.value.y
     const maxPan = (canvasWidth.value * (zoom.value - 1)) / (2 * zoom.value)
     panX.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.x + dx / zoom.value))
     panY.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.y + dy / zoom.value))
   }
+  // Single finger when not zoomed/dragging: let page scroll naturally
 }
 
 // Handle touch end
