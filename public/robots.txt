@@ -1,0 +1,8 @@
+# Radarplot - Maritime Radar Plotting Aid
+# https://radarplot.app
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://radarplot.app/sitemap.xml

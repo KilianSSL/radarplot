@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0f172a"/>
+  
+  <!-- Radar display area -->
+  <g transform="translate(180, 65)">
+    <!-- Radar background circle -->
+    <circle cx="250" cy="250" r="240" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+    
+    <!-- Radar rings -->
+    <circle cx="250" cy="250" r="200" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.4"/>
+    <circle cx="250" cy="250" r="150" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.35"/>
+    <circle cx="250" cy="250" r="100" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.3"/>
+    <circle cx="250" cy="250" r="50" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.25"/>
+    
+    <!-- Bearing lines -->
+    <line x1="250" y1="10" x2="250" y2="490" stroke="#22c55e" stroke-width="1" opacity="0.2"/>
+    <line x1="10" y1="250" x2="490" y2="250" stroke="#22c55e" stroke-width="1" opacity="0.2"/>
+    <line x1="80" y1="80" x2="420" y2="420" stroke="#22c55e" stroke-width="0.5" opacity="0.15"/>
+    <line x1="420" y1="80" x2="80" y2="420" stroke="#22c55e" stroke-width="0.5" opacity="0.15"/>
+    
+    <!-- Heading line -->
+    <line x1="250" y1="250" x2="250" y2="30" stroke="#22c55e" stroke-width="3"/>
+    <polygon points="250,20 242,40 258,40" fill="#22c55e"/>
+    
+    <!-- Own ship -->
+    <circle cx="250" cy="250" r="8" fill="#22c55e"/>
+    
+    <!-- Target markers and vectors -->
+    <!-- Target A -->
+    <g transform="translate(380, 140)">
+      <line x1="-10" y1="-10" x2="10" y2="10" stroke="#ef4444" stroke-width="3"/>
+      <line x1="10" y1="-10" x2="-10" y2="10" stroke="#ef4444" stroke-width="3"/>
+    </g>
+    <line x1="380" y1="140" x2="290" y2="220" stroke="#ef4444" stroke-width="2" stroke-dasharray="8,4"/>
+    
+    <!-- True motion vector -->
+    <line x1="180" y1="180" x2="250" y2="250" stroke="#3b82f6" stroke-width="2.5"/>
+    
+    <!-- CPA marker -->
+    <circle cx="290" cy="220" r="5" fill="none" stroke="#ef4444" stroke-width="2"/>
+    <line x1="250" y1="250" x2="290" y2="220" stroke="#f97316" stroke-width="1.5"/>
+  </g>
+  
+  <!-- Text content -->
+  <g transform="translate(620, 120)">
+    <text font-family="system-ui, sans-serif" font-size="72" font-weight="bold" fill="#ffffff">
+      Radarplot
+    </text>
+    <text y="60" font-family="system-ui, sans-serif" font-size="28" fill="#94a3b8">
+      Maritime Radar Plotting Aid
+    </text>
+    
+    <text y="140" font-family="system-ui, sans-serif" font-size="22" fill="#64748b">
+      Free online tool for:
+    </text>
+    
+    <g transform="translate(0, 180)">
+      <circle cx="10" cy="-6" r="4" fill="#22c55e"/>
+      <text x="25" font-family="system-ui, sans-serif" font-size="20" fill="#cbd5e1">CPA &amp; TCPA Calculation</text>
+    </g>
+    <g transform="translate(0, 215)">
+      <circle cx="10" cy="-6" r="4" fill="#22c55e"/>
+      <text x="25" font-family="system-ui, sans-serif" font-size="20" fill="#cbd5e1">True &amp; Relative Motion Vectors</text>
+    </g>
+    <g transform="translate(0, 250)">
+      <circle cx="10" cy="-6" r="4" fill="#22c55e"/>
+      <text x="25" font-family="system-ui, sans-serif" font-size="20" fill="#cbd5e1">Collision Avoidance Maneuvers</text>
+    </g>
+    <g transform="translate(0, 285)">
+      <circle cx="10" cy="-6" r="4" fill="#22c55e"/>
+      <text x="25" font-family="system-ui, sans-serif" font-size="20" fill="#cbd5e1">COLREGs Rule 19 Analysis</text>
+    </g>
+    
+    <text y="360" font-family="system-ui, sans-serif" font-size="18" fill="#64748b">
+      Perfect for nautical training &amp; education
+    </text>
+  </g>
+  
+  <!-- Footer -->
+  <text x="600" y="590" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" fill="#475569">
+    Based on Radarplot by Eddie C. Dost (brainaid GbR) • GPL v2 License • Free &amp; Open Source
+  </text>
+</svg>
