@@ -1112,7 +1112,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
           'own',
           apexX, apexY, pos0.x, pos0.y,
           { 
-            label: 'Own Ship Vector',
+            label: 'Own Ship Vector (A)',
             course: state.ownCourse,
             speed: state.ownSpeed
           },
@@ -1419,7 +1419,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         'new_own',
         apexX, apexY, xpointX, xpointY,
         { 
-          label: 'New Own Ship Vector',
+          label: "New Own Ship Vector (A')",
           course: newCourse,
           speed: newSpeed
         },

@@ -40,11 +40,11 @@
     "dblClickReset": "double-click to reset"
   },
   "tooltip": {
-    "ownShipVector": "Own Ship Vector",
+    "ownShipVector": "Own Ship Vector (A)",
     "trueMotion": "True Motion",
     "relativeMotion": "Relative Motion",
     "cpaLine": "CPA",
-    "newOwnVector": "New Own Ship Vector",
+    "newOwnVector": "New Own Ship Vector (A')",
     "newRelativeMotion": "New Relative Motion",
     "newCpaLine": "New CPA"
   },

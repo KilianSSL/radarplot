@@ -40,11 +40,11 @@
     "dblClickReset": "Doppelklick zum Zurücksetzen"
   },
   "tooltip": {
-    "ownShipVector": "Eigenvektor",
+    "ownShipVector": "Eigenvektor (A)",
     "trueMotion": "Wahre Bewegung",
     "relativeMotion": "Relative Bewegung",
     "cpaLine": "CPA",
-    "newOwnVector": "Neuer Eigenvektor",
+    "newOwnVector": "Neuer Eigenvektor (A')",
     "newRelativeMotion": "Neue rel. Bewegung",
     "newCpaLine": "Neuer CPA"
   },
