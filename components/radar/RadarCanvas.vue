@@ -24,39 +24,46 @@
     <Transition name="tooltip-fade">
       <div 
         v-if="hoveredVector && tooltipVisible"
-        class="absolute pointer-events-none z-10 px-3 py-2 rounded-lg shadow-lg text-sm font-mono
+        class="absolute pointer-events-none z-10 px-4 py-2.5 rounded-lg shadow-lg font-mono
                bg-slate-800/95 text-white dark:bg-slate-700/95 border border-slate-600/50
-               backdrop-blur-sm"
+               backdrop-blur-sm min-w-[200px] whitespace-nowrap"
         :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }"
       >
-        <div class="font-semibold mb-1 flex items-center gap-2">
+        <div class="font-semibold mb-1.5 flex items-center gap-2 text-sm">
           <span 
             class="w-3 h-0.5 rounded"
             :class="getVectorColorClass(hoveredVector.type)"
           ></span>
-          {{ hoveredVector.info.label }}
+          {{ getVectorLabel(hoveredVector) }}
         </div>
-        <div class="text-xs space-y-0.5 text-slate-300">
-          <div v-if="hoveredVector.info.course !== undefined">
-            {{ $t('radar.course') }}: {{ formatDegrees(hoveredVector.info.course) }}°
+        <div class="text-xs space-y-1 text-slate-300">
+          <div v-if="hoveredVector.info.course !== undefined" class="flex justify-between gap-4">
+            <span>{{ $t('radar.course') }}:</span>
+            <span class="text-white">{{ formatDegrees(hoveredVector.info.course) }}°</span>
           </div>
-          <div v-if="hoveredVector.info.speed !== undefined">
-            {{ $t('radar.speed') }}: {{ hoveredVector.info.speed.toFixed(1) }} kn
+          <div v-if="hoveredVector.info.speed !== undefined" class="flex justify-between gap-4">
+            <span>{{ $t('radar.speed') }}:</span>
+            <span class="text-white">{{ hoveredVector.info.speed.toFixed(1) }} kn</span>
           </div>
-          <div v-if="hoveredVector.info.bearing !== undefined">
-            {{ $t('radar.bearing') }}: {{ formatDegrees(hoveredVector.info.bearing) }}°
+          <div v-if="hoveredVector.info.bearing !== undefined" class="flex justify-between gap-4">
+            <span>{{ $t('radar.bearing') }}:</span>
+            <span class="text-white">{{ formatDegrees(hoveredVector.info.bearing) }}°</span>
           </div>
-          <div v-if="hoveredVector.info.cpa !== undefined">
-            CPA: {{ hoveredVector.info.cpa.toFixed(2) }} nm
+          <div v-if="hoveredVector.info.cpa !== undefined" class="flex justify-between gap-4">
+            <span>CPA:</span>
+            <span class="text-white">{{ hoveredVector.info.cpa.toFixed(2) }} nm</span>
           </div>
-          <div v-if="hoveredVector.info.tcpa !== undefined">
-            TCPA: {{ formatTime(hoveredVector.info.tcpa) }}
+          <div v-if="hoveredVector.info.tcpa !== undefined" class="flex justify-between gap-4">
+            <span>TCPA:</span>
+            <span class="text-white">{{ formatTime(hoveredVector.info.tcpa) }}</span>
           </div>
-          <div v-if="hoveredVector.info.newCpa !== undefined">
-            CPA': {{ hoveredVector.info.newCpa.toFixed(2) }} nm
+          <div v-if="hoveredVector.info.newCpa !== undefined" class="flex justify-between gap-4">
+            <span>CPA':</span>
+            <span class="text-white">{{ hoveredVector.info.newCpa.toFixed(2) }} nm</span>
           </div>
-          <div v-if="hoveredVector.info.newTcpa !== undefined">
-            TCPA': {{ formatTime(hoveredVector.info.newTcpa) }}
+          <div v-if="hoveredVector.info.newTcpa !== undefined" class="flex justify-between gap-4">
+            <span>TCPA':</span>
+            <span class="text-white">{{ formatTime(hoveredVector.info.newTcpa) }}</span>
           </div>
         </div>
       </div>
@@ -131,12 +138,12 @@ function updateCanvasSize() {
 }
 
 // Render function - passes zoom and pan to renderer
-function render() {
+function render(highlightVectorId?: string) {
   if (!canvasRef.value) return
   
   const renderer = useRadarRenderer(canvasRef as Ref<HTMLCanvasElement | null>, isDark.value)
   currentRenderer = renderer
-  renderer.render(radarStore.$state, zoom.value, panX.value, panY.value)
+  renderer.render(radarStore.$state, zoom.value, panX.value, panY.value, highlightVectorId)
 }
 
 // Setup ResizeObserver
@@ -275,6 +282,8 @@ function handleMouseMove(event: MouseEvent) {
     canvasRef.value.width, canvasRef.value.height
   )
   
+  const prevHovered = hoveredVector.value?.id
+  
   if (vector) {
     hoveredVector.value = vector
     tooltipX.value = event.clientX - rect.left + 15
@@ -283,16 +292,26 @@ function handleMouseMove(event: MouseEvent) {
     // Keep tooltip within container bounds
     const containerRect = containerRef.value?.getBoundingClientRect()
     if (containerRect) {
-      const maxX = containerRect.width - 180 // Approximate tooltip width
-      const maxY = containerRect.height - 100 // Approximate tooltip height
+      const maxX = containerRect.width - 220 // Approximate tooltip width
+      const maxY = containerRect.height - 120 // Approximate tooltip height
       tooltipX.value = Math.min(tooltipX.value, maxX)
       tooltipY.value = Math.max(10, Math.min(tooltipY.value, maxY))
     }
     
     tooltipVisible.value = true
+    
+    // Re-render with highlight if changed
+    if (prevHovered !== vector.id) {
+      render(vector.id)
+    }
   } else {
     tooltipVisible.value = false
     hoveredVector.value = null
+    
+    // Re-render without highlight if was highlighted
+    if (prevHovered) {
+      render()
+    }
   }
 }
 
@@ -438,6 +457,31 @@ function getVectorColorClass(type: TrackedVector['type']): string {
       return 'bg-red-600'
     default:
       return 'bg-gray-500'
+  }
+}
+
+// Get localized label for vector type
+const { t } = useI18n()
+function getVectorLabel(vector: TrackedVector): string {
+  const targetLetter = vector.targetIndex !== undefined ? ` (${String.fromCharCode(65 + vector.targetIndex)})` : ''
+  
+  switch (vector.type) {
+    case 'own':
+      return t('tooltip.ownShipVector')
+    case 'new_own':
+      return t('tooltip.newOwnVector')
+    case 'true':
+      return t('tooltip.trueMotion') + targetLetter
+    case 'relative':
+      return t('tooltip.relativeMotion') + targetLetter
+    case 'new_relative':
+      return t('tooltip.newRelativeMotion') + targetLetter
+    case 'cpa':
+      return t('tooltip.cpaLine') + targetLetter
+    case 'new_cpa':
+      return t('tooltip.newCpaLine') + targetLetter
+    default:
+      return vector.info.label
   }
 }
 

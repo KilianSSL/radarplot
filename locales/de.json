@@ -29,7 +29,8 @@
     "showHeading": "Kurs anzeigen",
     "ownShip": "Eigenes Schiff",
     "course": "Kurs",
-    "speed": "Geschwindigkeit",
+    "speed": "Fahrt",
+    "bearing": "Peilung",
     "targets": "Ziele",
     "target": "Ziel {letter}",
     "targetData": "Zieldaten",
@@ -37,6 +38,15 @@
     "maneuver": "Manöver",
     "results": "Ergebnisse",
     "dblClickReset": "Doppelklick zum Zurücksetzen"
+  },
+  "tooltip": {
+    "ownShipVector": "Eigenvektor",
+    "trueMotion": "Wahre Bewegung",
+    "relativeMotion": "Relative Bewegung",
+    "cpaLine": "CPA",
+    "newOwnVector": "Neuer Eigenvektor",
+    "newRelativeMotion": "Neue rel. Bewegung",
+    "newCpaLine": "Neuer CPA"
   },
   "observation": {
     "time": "Zeit",

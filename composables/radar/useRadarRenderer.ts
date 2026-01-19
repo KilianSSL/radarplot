@@ -50,9 +50,43 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
   // Tracked vectors for hover detection
   let trackedVectors: TrackedVector[] = [];
   
+  // Currently highlighted vector ID (for dimming others)
+  let highlightedVectorId: string | undefined = undefined;
+  
   // Clear tracked vectors (called at start of each render)
   function clearTrackedVectors() {
     trackedVectors = [];
+  }
+  
+  // Set highlighted vector ID
+  function setHighlightedVector(id: string | undefined) {
+    highlightedVectorId = id;
+  }
+  
+  // Apply alpha to color for dimming effect
+  function applyAlpha(color: string, alpha: number): string {
+    // Handle hex colors
+    if (color.startsWith('#')) {
+      const r = parseInt(color.slice(1, 3), 16);
+      const g = parseInt(color.slice(3, 5), 16);
+      const b = parseInt(color.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    // Handle rgb/rgba colors
+    if (color.startsWith('rgb')) {
+      const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (match) {
+        return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${alpha})`;
+      }
+    }
+    return color;
+  }
+  
+  // Get color with dimming applied if not highlighted
+  function getVectorColor(baseColor: string, vectorId: string): string {
+    if (!highlightedVectorId) return baseColor;
+    if (vectorId === highlightedVectorId) return baseColor;
+    return applyAlpha(baseColor, 0.25); // Dim non-highlighted vectors
   }
   
   // Track a vector for hover detection
@@ -940,10 +974,13 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       // Draw relative motion vector (line between observations)
       // C code: radar_set_vector(radar, &s->vectors[VECTOR_RELATIVE], ...)
       if (pos0 && target.vBr > 0) {
-        drawVector(pos0.x, pos0.y, pos1.x, pos1.y, COLORS.RELATIVE_MOTION, 2);
+        const relativeVectorId = `relative_${target.index}`;
+        const relativeColor = getVectorColor(COLORS.RELATIVE_MOTION, relativeVectorId);
+        
+        drawVector(pos0.x, pos0.y, pos1.x, pos1.y, relativeColor, 2);
         // Track relative motion vector for hover
         trackVector(
-          `relative_${target.index}`,
+          relativeVectorId,
           'relative',
           pos0.x, pos0.y, pos1.x, pos1.y,
           { 
@@ -954,14 +991,14 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
           target.index
         );
         // C code: radar_mark_vector(radar, s, VECTOR_RELATIVE, ...) - arrow + circle marker
-        drawMidArrowRelative(pos0.x, pos0.y, pos1.x, pos1.y, COLORS.RELATIVE_MOTION);
+        drawMidArrowRelative(pos0.x, pos0.y, pos1.x, pos1.y, relativeColor);
         
         // Extend relative motion vector forward toward CPA
         // C code: radar_set_vector(radar, &s->vectors[VECTOR_REL_EXT], ...)
         if (target.haveCPA) {
           // Use trueToCanvas for Course Up support
           const cpaPos = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
-          drawVector(pos1.x, pos1.y, cpaPos.x, cpaPos.y, COLORS.RELATIVE_MOTION, 1, [3, 3]);
+          drawVector(pos1.x, pos1.y, cpaPos.x, cpaPos.y, relativeColor, 1, [3, 3]);
         }
       }
     }
@@ -974,12 +1011,15 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       const cpaX = cpaCanvas.x;
       const cpaY = cpaCanvas.y;
       
+      const cpaVectorId = `cpa_${target.index}`;
+      const cpaColor = getVectorColor(COLORS.CPA_MARKER, cpaVectorId);
+      
       // Draw perpendicular line from center (own position) to CPA point
       // This shows the closest point of approach on the target's relative track
-      drawVector(cx, cy, cpaX, cpaY, COLORS.CPA_MARKER, 1.5);
+      drawVector(cx, cy, cpaX, cpaY, cpaColor, 1.5);
       // Track CPA line for hover
       trackVector(
-        `cpa_${target.index}`,
+        cpaVectorId,
         'cpa',
         cx, cy, cpaX, cpaY,
         { 
@@ -1043,11 +1083,14 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         
         // Draw VECTOR_OWN: from apex to B₀ (green line with mid-arrow)
         // C code: radar_mark_vector(radar, s, VECTOR_OWN, s->own_mark_gc, x, y, xs[0], ys[0]);
-        drawVector(apexX, apexY, pos0.x, pos0.y, COLORS.OWN_SHIP, 2);
-        drawMidArrowOwn(apexX, apexY, pos0.x, pos0.y, COLORS.OWN_SHIP);
+        const ownVectorId = `own_${target.index}`;
+        const ownColor = getVectorColor(COLORS.OWN_SHIP, ownVectorId);
+        
+        drawVector(apexX, apexY, pos0.x, pos0.y, ownColor, 2);
+        drawMidArrowOwn(apexX, apexY, pos0.x, pos0.y, ownColor);
         // Track own ship vector for hover
         trackVector(
-          `own_${target.index}`,
+          ownVectorId,
           'own',
           apexX, apexY, pos0.x, pos0.y,
           { 
@@ -1061,11 +1104,14 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         // Draw VECTOR_TRUE: from apex to B₁ (blue line with mid-arrow)
         // C code: radar_mark_vector(radar, s, VECTOR_TRUE, s->true_mark_gc, x, y, xs[1], ys[1]);
         if (target.vB > 0) {
-          drawVector(apexX, apexY, pos1.x, pos1.y, COLORS.TRUE_MOTION, 2);
-          drawMidArrowTrue(apexX, apexY, pos1.x, pos1.y, COLORS.TRUE_MOTION);
+          const trueVectorId = `true_${target.index}`;
+          const trueColor = getVectorColor(COLORS.TRUE_MOTION, trueVectorId);
+          
+          drawVector(apexX, apexY, pos1.x, pos1.y, trueColor, 2);
+          drawMidArrowTrue(apexX, apexY, pos1.x, pos1.y, trueColor);
           // Track true motion vector for hover
           trackVector(
-            `true_${target.index}`,
+            trueVectorId,
             'true',
             apexX, apexY, pos1.x, pos1.y,
             { 
@@ -1126,6 +1172,9 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       const dy = newCpaY - mpointY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       
+      const newRelativeVectorId = `new_relative_${target.index}`;
+      const newRelativeColor = getVectorColor(COLORS.RELATIVE_MOTION, newRelativeVectorId);
+      
       if (dist > 0) {
         // Extend the line beyond newCpa to the edge of radar
         const extendFactor = state.radiusPixels / dist * 1.5;
@@ -1133,7 +1182,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         const extEndY = mpointY + dy * extendFactor;
         
         // Draw the new relative motion line (solid, same style as original relative motion)
-        ctx.strokeStyle = COLORS.RELATIVE_MOTION;
+        ctx.strokeStyle = newRelativeColor;
         ctx.lineWidth = 2;
         ctx.setLineDash([]);
         ctx.beginPath();
@@ -1143,7 +1192,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         
         // Track new relative motion line for hover
         trackVector(
-          `new_relative_${target.index}`,
+          newRelativeVectorId,
           'new_relative',
           mpointX, mpointY, extEndX, extEndY,
           { 
@@ -1159,7 +1208,10 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       // Draw line from own ship to new CPA (perpendicular to new relative motion)
       // This shows the new CPA distance - use same color as original CPA (red)
       // ==========================================================================
-      ctx.strokeStyle = COLORS.CPA_MARKER;
+      const newCpaVectorId = `new_cpa_${target.index}`;
+      const newCpaColor = getVectorColor(COLORS.CPA_MARKER, newCpaVectorId);
+      
+      ctx.strokeStyle = newCpaColor;
       ctx.lineWidth = 1.5;
       ctx.setLineDash([]);
       ctx.beginPath();
@@ -1169,7 +1221,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       
       // Track new CPA line for hover
       trackVector(
-        `new_cpa_${target.index}`,
+        newCpaVectorId,
         'new_cpa',
         cx, cy, newCpaX, newCpaY,
         { 
@@ -1255,8 +1307,12 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       const apexX = pos0Canvas.x + ownDistPx * sinRev;
       const apexY = pos0Canvas.y - ownDistPx * cosRev;
       
+      // Calculate new own vector ID and color for highlight
+      const newOwnVectorId = `new_own_${target.index}`;
+      const newOwnColor = getVectorColor(COLORS.OWN_SHIP, newOwnVectorId);
+      
       // Draw from apex (p0_sub_own) to xpoint
-      ctx.strokeStyle = COLORS.OWN_SHIP;
+      ctx.strokeStyle = newOwnColor;
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 3]);
       ctx.beginPath();
@@ -1273,7 +1329,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         ? state.maneuverResult.requiredSpeed
         : state.ownSpeed;
       trackVector(
-        `new_own_${target.index}`,
+        newOwnVectorId,
         'new_own',
         apexX, apexY, xpointX, xpointY,
         { 
@@ -1289,7 +1345,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       // so the arrow would overlap. Original C code: radar_mark_vector only called
       // for MANEUVER_COURSE_FROM_CPA and MANEUVER_CPA_FROM_COURSE
       if (state.maneuverType === 'course') {
-        drawMidArrowOwn(apexX, apexY, xpointX, xpointY, COLORS.OWN_SHIP);
+        drawMidArrowOwn(apexX, apexY, xpointX, xpointY, newOwnColor);
       }
       
       // ==========================================================================
@@ -1543,8 +1599,9 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
    * @param zoom - Zoom scale factor (default 1)
    * @param panX - Pan X offset in pixels (default 0)
    * @param panY - Pan Y offset in pixels (default 0)
+   * @param highlightVectorId - Optional ID of vector to highlight (dims others)
    */
-  function render(state: RadarState, zoom: number = 1, panX: number = 0, panY: number = 0) {
+  function render(state: RadarState, zoom: number = 1, panX: number = 0, panY: number = 0, highlightVectorId?: string) {
     if (!state.doRender) return;
     if (!canvasRef.value) return;
     
@@ -1553,6 +1610,9 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     
     // Clear tracked vectors at start of each render
     clearTrackedVectors();
+    
+    // Set highlight state
+    setHighlightedVector(highlightVectorId);
     
     // Get canvas dimensions
     const width = canvasRef.value.width;

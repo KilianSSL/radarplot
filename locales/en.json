@@ -30,6 +30,7 @@
     "ownShip": "Own Ship",
     "course": "Course",
     "speed": "Speed",
+    "bearing": "Bearing",
     "targets": "Targets",
     "target": "Target {letter}",
     "targetData": "Target Data",
@@ -37,6 +38,15 @@
     "maneuver": "Maneuver",
     "results": "Results",
     "dblClickReset": "double-click to reset"
+  },
+  "tooltip": {
+    "ownShipVector": "Own Ship Vector",
+    "trueMotion": "True Motion",
+    "relativeMotion": "Relative Motion",
+    "cpaLine": "CPA",
+    "newOwnVector": "New Own Ship Vector",
+    "newRelativeMotion": "New Relative Motion",
+    "newCpaLine": "New CPA"
   },
   "observation": {
     "time": "Time",
