@@ -97,13 +97,13 @@
     <!-- CPA point and line -->
     <circle cx="280" cy="262" r="4" fill="none" stroke="#f97316" stroke-width="2"/>
     <line x1="260" y1="260" x2="280" y2="262" stroke="#f97316" stroke-width="1.5" opacity="0.8"/>
-    <text x="286" y="275" font-family="system-ui, sans-serif" font-size="10" fill="#f97316">CPA 0.4nm</text>
+    <text x="286" y="275" font-family="system-ui, sans-serif" font-size="10" fill="#f97316">CPA 0,4sm</text>
     
     <!-- Range labels -->
     <text x="260" y="58" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#64748b">6</text>
-    <text x="260" y="111" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#64748b">4.5</text>
+    <text x="260" y="111" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#64748b">4,5</text>
     <text x="260" y="163" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#64748b">3</text>
-    <text x="260" y="216" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#64748b">1.5</text>
+    <text x="260" y="216" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#64748b">1,5</text>
   </g>
   
   <!-- Text content - Right side -->
@@ -114,7 +114,7 @@
       Radarplot
     </text>
     <text x="8" y="50" font-family="system-ui, sans-serif" font-size="20" fill="#94a3b8">
-      Maritime Radar Plotting Aid
+      Nautisches Radar-Plotting-Hilfsmittel
     </text>
     
     <!-- Feature list with modern styling -->
@@ -122,33 +122,33 @@
       <g transform="translate(0, 0)">
         <rect width="24" height="24" rx="6" fill="#00dc82" opacity="0.15"/>
         <text x="12" y="17" text-anchor="middle" font-size="14" fill="#00dc82">✓</text>
-        <text x="34" y="17" font-family="system-ui, sans-serif" font-size="16" fill="#e2e8f0">CPA &amp; TCPA Calculation</text>
+        <text x="34" y="17" font-family="system-ui, sans-serif" font-size="16" fill="#e2e8f0">CPA- &amp; TCPA-Berechnung</text>
       </g>
       <g transform="translate(0, 40)">
         <rect width="24" height="24" rx="6" fill="#00dc82" opacity="0.15"/>
         <text x="12" y="17" text-anchor="middle" font-size="14" fill="#00dc82">✓</text>
-        <text x="34" y="17" font-family="system-ui, sans-serif" font-size="16" fill="#e2e8f0">True &amp; Relative Motion Vectors</text>
+        <text x="34" y="17" font-family="system-ui, sans-serif" font-size="16" fill="#e2e8f0">Wahre &amp; relative Bewegungsvektoren</text>
       </g>
       <g transform="translate(0, 80)">
         <rect width="24" height="24" rx="6" fill="#00dc82" opacity="0.15"/>
         <text x="12" y="17" text-anchor="middle" font-size="14" fill="#00dc82">✓</text>
-        <text x="34" y="17" font-family="system-ui, sans-serif" font-size="16" fill="#e2e8f0">Maneuver Planning</text>
+        <text x="34" y="17" font-family="system-ui, sans-serif" font-size="16" fill="#e2e8f0">Manöverplanung</text>
       </g>
       <g transform="translate(0, 120)">
         <rect width="24" height="24" rx="6" fill="#00dc82" opacity="0.15"/>
         <text x="12" y="17" text-anchor="middle" font-size="14" fill="#00dc82">✓</text>
-        <text x="34" y="17" font-family="system-ui, sans-serif" font-size="16" fill="#e2e8f0">COLREGs Rule 19 Analysis</text>
+        <text x="34" y="17" font-family="system-ui, sans-serif" font-size="16" fill="#e2e8f0">KVR Regel 19 Analyse</text>
       </g>
       <g transform="translate(0, 160)">
         <rect width="24" height="24" rx="6" fill="#00dc82" opacity="0.15"/>
         <text x="12" y="17" text-anchor="middle" font-size="14" fill="#00dc82">✓</text>
-        <text x="34" y="17" font-family="system-ui, sans-serif" font-size="16" fill="#e2e8f0">Free &amp; Open Source</text>
+        <text x="34" y="17" font-family="system-ui, sans-serif" font-size="16" fill="#e2e8f0">Kostenlos &amp; Open Source</text>
       </g>
     </g>
     
     <!-- Tagline -->
     <text y="330" font-family="system-ui, sans-serif" font-size="15" fill="#64748b">
-      Perfect for nautical training &amp; education
+      Perfekt für nautische Ausbildung &amp; Schulung
     </text>
   </g>
   
@@ -156,7 +156,7 @@
   <g transform="translate(0, 580)">
     <rect width="1200" height="50" fill="#020420" opacity="0.5"/>
     <text x="600" y="32" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">
-      Based on Radarplot by Eddie C. Dost • GPL v2 License • radarplot.app
+      Basierend auf Radarplot von Eddie C. Dost • GPL v2 Lizenz • radarplot.app
     </text>
   </g>
 </svg>
