@@ -52,52 +52,52 @@
     <line x1="85" y1="85" x2="435" y2="435" stroke="#00dc82" stroke-width="0.3" opacity="0.1"/>
     <line x1="435" y1="85" x2="85" y2="435" stroke="#00dc82" stroke-width="0.3" opacity="0.1"/>
     
-    <!-- Heading line pointing SW (opposite of B₀ direction) with glow -->
-    <line x1="260" y1="260" x2="94" y2="426" stroke="#00dc82" stroke-width="2.5" filter="url(#glow)"/>
-    <polygon points="89,431 107,425 95,413" fill="#00dc82" filter="url(#glow)"/>
+    <!-- Heading line pointing UP (course-up mode) with glow -->
+    <line x1="260" y1="260" x2="260" y2="25" stroke="#00dc82" stroke-width="2.5" filter="url(#glow)"/>
+    <polygon points="260,18 252,35 268,35" fill="#00dc82" filter="url(#glow)"/>
     
     <!-- Own ship position -->
     <circle cx="260" cy="260" r="6" fill="#00dc82" filter="url(#glow)"/>
     
-    <!-- Target observation points -->
-    <!-- B₀ observation (first bearing) -->
-    <g transform="translate(380, 150)">
+    <!-- Target observation points - crossing situation from starboard -->
+    <!-- B₀ observation (first bearing) - starboard bow -->
+    <g transform="translate(390, 130)">
       <line x1="-6" y1="0" x2="6" y2="0" stroke="#f43f5e" stroke-width="2"/>
       <line x1="0" y1="-6" x2="0" y2="6" stroke="#f43f5e" stroke-width="2"/>
     </g>
-    <text x="392" y="148" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e" opacity="0.9">B₀</text>
+    <text x="402" y="128" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e" opacity="0.9">B₀</text>
     
-    <!-- B₁ observation (second bearing) -->
-    <g transform="translate(340, 195)">
+    <!-- B₁ observation (second bearing) - target moved across -->
+    <g transform="translate(350, 180)">
       <line x1="-6" y1="0" x2="6" y2="0" stroke="#f43f5e" stroke-width="2"/>
       <line x1="0" y1="-6" x2="0" y2="6" stroke="#f43f5e" stroke-width="2"/>
     </g>
-    <text x="352" y="193" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e" opacity="0.9">B₁</text>
+    <text x="362" y="178" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e" opacity="0.9">B₁</text>
     
     <!-- Relative motion vector (B₀ to B₁) - solid red -->
-    <line x1="380" y1="150" x2="340" y2="195" stroke="#f43f5e" stroke-width="2" filter="url(#glow)"/>
+    <line x1="390" y1="130" x2="350" y2="180" stroke="#f43f5e" stroke-width="2" filter="url(#glow)"/>
     
-    <!-- Relative motion extension to CPA - dashed (perpendicular intersection) -->
-    <line x1="340" y1="195" x2="240" y2="308" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.7"/>
+    <!-- Relative motion extension to CPA - dashed -->
+    <line x1="350" y1="180" x2="220" y2="342" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.7"/>
     
-    <!-- Velocity triangle apex (NE of B₀, consistent with SW heading) -->
-    <circle cx="422" cy="108" r="2" fill="#00dc82" opacity="0.6"/>
+    <!-- Velocity triangle apex (below B₀ - own ship traveled north) -->
+    <circle cx="390" cy="190" r="2" fill="#00dc82" opacity="0.6"/>
     
-    <!-- Own ship vector (green) - apex to B₀ - points SW matching heading -->
-    <line x1="422" y1="108" x2="380" y2="150" stroke="#00dc82" stroke-width="2"/>
-    <!-- Single arrow at midpoint -->
-    <polygon points="400.8,123.6 397.5,132.5 406.4,129.2" fill="#00dc82"/>
+    <!-- Own ship vector (green) - apex to B₀ - points NORTH matching heading -->
+    <line x1="390" y1="190" x2="390" y2="130" stroke="#00dc82" stroke-width="2"/>
+    <!-- Single arrow at midpoint pointing up -->
+    <polygon points="394,163.7 390,155 386,163.7" fill="#00dc82"/>
     
     <!-- True motion vector (blue) - apex to B₁ - two arrows >> -->
-    <line x1="422" y1="108" x2="340" y2="195" stroke="#3b82f6" stroke-width="2"/>
+    <line x1="390" y1="190" x2="350" y2="180" stroke="#3b82f6" stroke-width="2"/>
     <!-- Front arrow -->
-    <polygon points="378.6,148.3 375.5,157.3 384.4,153.7" fill="#3b82f6"/>
+    <polygon points="371.6,181.3 362.2,183.1 369.6,189.1" fill="#3b82f6"/>
     <!-- Back arrow -->
-    <polygon points="384.1,142.5 381,151.5 389.9,147.9" fill="#3b82f6"/>
+    <polygon points="379.4,183.2 370,185 377.4,191" fill="#3b82f6"/>
     
     <!-- CPA point and line (perpendicular to relative motion) -->
-    <line x1="260" y1="260" x2="272" y2="271" stroke="#f97316" stroke-width="1.5" opacity="0.8"/>
-    <text x="248" y="290" font-family="system-ui, sans-serif" font-size="10" fill="#f97316">CPA 0.4nm</text>
+    <line x1="260" y1="260" x2="276" y2="273" stroke="#f97316" stroke-width="1.5" opacity="0.8"/>
+    <text x="282" y="286" font-family="system-ui, sans-serif" font-size="10" fill="#f97316">CPA 0.5nm</text>
     
     <!-- Range labels -->
     <text x="260" y="58" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#64748b">6</text>
