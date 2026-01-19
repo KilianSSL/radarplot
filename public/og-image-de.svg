@@ -83,16 +83,17 @@
     <!-- Velocity triangle apex -->
     <circle cx="320" cy="105" r="2" fill="#00dc82" opacity="0.6"/>
     
-    <!-- Own ship vector (green) - apex to B₀ -->
+    <!-- Own ship vector (green) - apex to B₀ - single arrow -->
     <line x1="320" y1="105" x2="380" y2="150" stroke="#00dc82" stroke-width="2"/>
-    <!-- Arrow on own vector -->
-    <polygon points="365,138 358,148 370,150" fill="#00dc82"/>
+    <!-- Arrow at midpoint: calculated from drawMidArrowOwn logic -->
+    <polygon points="344.7,128.5 354,130.5 349.5,122.1" fill="#00dc82"/>
     
-    <!-- True motion vector (blue) - apex to B₁ -->
+    <!-- True motion vector (blue) - apex to B₁ - two arrows >> -->
     <line x1="320" y1="105" x2="340" y2="195" stroke="#3b82f6" stroke-width="2"/>
-    <!-- Arrows on true vector -->
-    <polygon points="333,165 326,175 338,177" fill="#3b82f6"/>
-    <polygon points="328,145 321,155 333,157" fill="#3b82f6"/>
+    <!-- Front arrow: tip ahead of center -->
+    <polygon points="326,150.2 331.7,157.8 333.8,148.5" fill="#3b82f6"/>
+    <!-- Back arrow: behind center -->
+    <polygon points="324.2,142.4 330,150 332,140.7" fill="#3b82f6"/>
     
     <!-- CPA point and line -->
     <circle cx="280" cy="262" r="4" fill="none" stroke="#f97316" stroke-width="2"/>
