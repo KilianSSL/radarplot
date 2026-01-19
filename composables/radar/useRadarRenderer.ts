@@ -1215,13 +1215,61 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     // This is the port of radar_calculate_secondary() behavior from the original C code
     // ==========================================================================
     if (target.haveNewCPA && target.index !== state.maneuverTargetIndex) {
-      // SECONDARY TARGET: Draw new relative motion line and new CPA (not the full maneuver visualization)
+      // SECONDARY TARGET: Draw new own ship vector, new relative motion line and new CPA
       // For secondary targets, use dashed lines (matches C code: ext_gc and cpa_gc are DASHED for non-mtarget)
       const ctx = getContext();
       if (ctx) {
         // Get mpoint and newCpa positions
         const mpoint = trueToCanvas(cx, cy, target.mpoint.x, target.mpoint.y, pixelsPerNM, state.northUp, state.ownCourse);
         const newCpa = trueToCanvas(cx, cy, target.newCpa.x, target.newCpa.y, pixelsPerNM, state.northUp, state.ownCourse);
+        
+        // ==========================================================================
+        // Draw VECTOR_NEW_OWN: New own ship vector from apex (p0_sub_own) to xpoint
+        // C code: radar_set_vector(radar, &s->vectors[VECTOR_NEW_OWN], s->own_gc, x, y, x2, y2);
+        // This shows the new course applied from the primary maneuver target
+        // ==========================================================================
+        if (pos0 && target.deltaTime > 0 && target.xpoint) {
+          // Calculate the triangle apex (p0_sub_own) - same as for the original velocity triangle
+          const ownDistanceNM = state.ownSpeed * (target.deltaTime / 60);
+          if (ownDistanceNM > 0) {
+            const reverseBearing = normalizeAngle(state.ownCourse + 180);
+            const ownDistancePixels = ownDistanceNM * pixelsPerNM;
+            const { sin: sinReverse, cos: cosReverse } = nauticalSinCos(
+              reverseBearing, state.northUp, state.ownCourse
+            );
+            const apexX = pos0.x + ownDistancePixels * sinReverse;
+            const apexY = pos0.y - ownDistancePixels * cosReverse;
+            
+            // Get xpoint position (end of new own ship vector)
+            const xpointPos = trueToCanvas(cx, cy, target.xpoint.x, target.xpoint.y, pixelsPerNM, state.northUp, state.ownCourse);
+            
+            // Draw new own ship vector (green, dashed for secondary targets)
+            const newOwnVectorId = `new_own_${target.index}`;
+            const newOwnColor = getVectorColor(COLORS.OWN_SHIP, newOwnVectorId);
+            
+            ctx.strokeStyle = newOwnColor;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([3, 3]);  // Dashed for secondary targets
+            ctx.beginPath();
+            ctx.moveTo(apexX, apexY);
+            ctx.lineTo(xpointPos.x, xpointPos.y);
+            ctx.stroke();
+            ctx.setLineDash([]);  // Reset
+            
+            // Track new own ship vector for hover
+            trackVector(
+              newOwnVectorId,
+              'new_own',
+              apexX, apexY, xpointPos.x, xpointPos.y,
+              { 
+                label: `New Own Ship Vector (A')`,
+                course: state.newCourse,
+                speed: state.newSpeed
+              },
+              target.index
+            );
+          }
+        }
         
         // Draw new relative motion line from mpoint through newCpa (DASHED for secondary targets)
         // C code: VECTOR_NEW_REL0 uses ext_gc (dashed for non-mtarget)
