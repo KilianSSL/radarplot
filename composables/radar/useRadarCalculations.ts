@@ -1006,8 +1006,6 @@ export function useRadarCalculations() {
       return { success: false, error: 'Invalid maneuver parameters' };
     }
     
-    console.log('[Maneuver] mpoint:', mpoint, 'mdistance:', mdistance);
-    
     // ==========================================================================
     // Step 2: Handle CPA_FROM_COURSE/SPEED mode (user specifies course/speed directly)
     // Port of radar_calculate_new_cpa() from radar.c
@@ -1016,13 +1014,9 @@ export function useRadarCalculations() {
     // ==========================================================================
     
     if (!maneuverByCPA) {
-      console.log('[Maneuver] CPA_FROM mode: calculating CPA from user-specified course/speed');
-      
       // Use user-provided course/speed
       const userCourse = maneuverType === 'course' ? newCourse : ownCourse;
       const userSpeed = maneuverType === 'speed' ? newSpeed : ownSpeed;
-      
-      console.log('[Maneuver] User course:', userCourse, 'User speed:', userSpeed);
       
       // Calculate new travel distance during observation interval
       const newL = userSpeed * (target.deltaTime / 60);
@@ -1031,14 +1025,10 @@ export function useRadarCalculations() {
       const newOwnVec = polarToCartesian(userCourse, newL);
       const xpoint = vectorAdd(p0SubOwn, newOwnVec);
       
-      console.log('[Maneuver] xpoint:', xpoint);
-      
       // Calculate new relative motion direction: course from xpoint to sight[1]
       const relVec = vectorSubtract(pos1, xpoint);
       const { bearing: newKBr, distance: relDist } = cartesianToPolar(relVec);
       const newVBr = relDist / (target.deltaTime / 60); // Relative speed
-      
-      console.log('[Maneuver] New KBr:', newKBr, 'New vBr:', newVBr);
       
       // Calculate CPA as perpendicular distance from origin to new relative motion line
       // Line passes through mpoint with direction newKBr
@@ -1064,8 +1054,6 @@ export function useRadarCalculations() {
         x: mpoint.x + t * dirX,
         y: mpoint.y + t * dirY
       };
-      
-      console.log('[Maneuver] Calculated CPA:', calculatedCPA, 'CPA point:', newCpaPoint);
       
       // Calculate after-maneuver values
       const newPCPA = cartesianToPolar(newCpaPoint).bearing;
@@ -1150,12 +1138,6 @@ export function useRadarCalculations() {
     const newCpaPoint0 = vectorAdd(mpoint, polarToCartesian(KBr0, m));
     const newCpaPoint1 = vectorAdd(mpoint, polarToCartesian(KBr1, m));
     
-    console.log('[Maneuver] alpha:', alpha, 'm:', m);
-    console.log('[Maneuver] mpointToOrigin:', mpointToOrigin);
-    console.log('[Maneuver] KBr0:', KBr0, 'KBr1:', KBr1);
-    console.log('[Maneuver] newCpaPoint0:', newCpaPoint0, 'dist from origin:', vectorMagnitude(newCpaPoint0));
-    console.log('[Maneuver] newCpaPoint1:', newCpaPoint1, 'dist from origin:', vectorMagnitude(newCpaPoint1));
-    
     // ==========================================================================
     // Step 3: Find xpoint - DIFFERENT for course vs speed change!
     // 
@@ -1175,12 +1157,6 @@ export function useRadarCalculations() {
     
     // C code: if (90 <= bearing < 180) direction = PORT (-1), else STARBOARD (+1)
     const direction = (bearingRelativeToOwnCourse >= 90 && bearingRelativeToOwnCourse < 180) ? -1 : 1;
-    const directionName = direction === 1 ? 'STARBOARD' : 'PORT';
-    
-    console.log('[Maneuver] Mpoint bearing:', mpointBearing.toFixed(1), 
-                'relative to course:', bearingRelativeToOwnCourse.toFixed(1),
-                'direction:', directionName);
-    console.log('[Maneuver] Maneuver type:', maneuverType);
     
     // Interface for possible solutions
     interface ManeuverSolution {
@@ -1202,13 +1178,6 @@ export function useRadarCalculations() {
       // Find where line (sight[1] → v0) crosses line (p0_sub_own → sight[0])
       // The crossing point gives xpoint, and speed = distance(p0_sub_own, xpoint) / deltaTime
       // ==========================================================================
-      console.log('[Maneuver] Using SPEED CHANGE algorithm (line-line intersection)');
-      
-      console.log('[Maneuver] SPEED CHANGE - Input data:');
-      console.log('  p0SubOwn:', p0SubOwn);
-      console.log('  pos0 (sight[0]):', pos0);
-      console.log('  pos1 (sight[1]):', pos1);
-      console.log('  m (tangent distance):', m);
       
       for (const [testKBr, testNewCpa] of [[KBr0, newCpaPoint0], [KBr1, newCpaPoint1]] as [number, VectorXY][]) {
         // Tangent offset: m × direction(KBr)
@@ -1218,18 +1187,10 @@ export function useRadarCalculations() {
         // This is the adjusted position for the new relative motion line
         const v0 = vectorSubtract(pos1, tangentOffset);
         
-        console.log('[Maneuver] Testing KBr:', testKBr.toFixed(1));
-        console.log('  tangentOffset:', tangentOffset);
-        console.log('  v0:', v0);
-        console.log('  Line 1: p0SubOwn -> pos0');
-        console.log('  Line 2: pos1 -> v0');
-        
         // Find intersection of:
         // Line 1: p0_sub_own → sight[0] (the velocity triangle base - all possible own speeds)
         // Line 2: sight[1] → v0 (the adjusted relative motion line)
         const crossing = linesCrossing(p0SubOwn, pos0, pos1, v0);
-        
-        console.log('  crossing result:', crossing);
         
         if (crossing) {
           // Check if crossing is on the line segment (valid speed range)
@@ -1254,10 +1215,6 @@ export function useRadarCalculations() {
             deviation,
             solutionValid
           });
-          
-          console.log('[Maneuver]   Speed:', candidateSpeed.toFixed(1), 
-                      'kn, onSegment:', onSegment,
-                      'valid:', solutionValid);
         }
       }
       
@@ -1269,7 +1226,6 @@ export function useRadarCalculations() {
       // 
       // Find where line crosses circle of radius l (own ship travel distance)
       // ==========================================================================
-      console.log('[Maneuver] Using COURSE CHANGE algorithm (circle-line intersection)');
       
       for (const [testKBr, testNewCpa] of [[KBr0, newCpaPoint0], [KBr1, newCpaPoint1]] as [number, VectorXY][]) {
         // v0 = sight[1] - p0_sub_own (relative to p0_sub_own, this is the true motion vector)
@@ -1283,8 +1239,6 @@ export function useRadarCalculations() {
         
         // Find where line v0→v1 crosses circle of radius l centered at origin
         const crossings = circleLineCrossing(v0, v1, l);
-        
-        console.log('[Maneuver] Testing KBr:', testKBr.toFixed(1), 'crossings:', crossings.length);
         
         if (crossings.length > 0) {
           for (const crossing of crossings) {
@@ -1308,22 +1262,15 @@ export function useRadarCalculations() {
               deviation,
               solutionValid
             });
-            
-            console.log('[Maneuver]   Crossing course:', candidateCourse.toFixed(1), 
-                        'deviation:', deviation.toFixed(1), 
-                        'valid:', solutionValid);
           }
         }
       }
     }
     
-    console.log('[Maneuver] Possible solutions after filtering:', possibleSolutions.length);
-    
     // Select the best solution
     let selectedSolution: ManeuverSolution | undefined;
     
     const validSolutions = possibleSolutions.filter(s => s.solutionValid);
-    console.log('[Maneuver] Valid solutions:', validSolutions.length, 'of', possibleSolutions.length, 'total');
     
     if (validSolutions.length > 0) {
       // Sort by deviation (smallest first)
@@ -1331,18 +1278,15 @@ export function useRadarCalculations() {
       // For speed change: smaller deviation (ownSpeed - candidateSpeed) = higher speed
       validSolutions.sort((a, b) => a.deviation - b.deviation);
       selectedSolution = validSolutions[0];
-      console.log('[Maneuver] Selected valid solution with deviation:', selectedSolution.deviation.toFixed(2));
     } else if (possibleSolutions.length > 0) {
       // Fallback to any solution (even if not on segment)
       // Sort to get best candidate
       possibleSolutions.sort((a, b) => a.deviation - b.deviation);
       selectedSolution = possibleSolutions[0];
-      console.log('[Maneuver] WARNING: Using invalid solution with deviation:', selectedSolution.deviation.toFixed(2));
     }
     
     // If still no solution, create a fallback
     if (!selectedSolution) {
-      console.log('[Maneuver] Using fallback xpoint calculation');
       
       if (maneuverType === 'speed') {
         // Fallback for speed: stop (speed = 0)
@@ -1376,10 +1320,6 @@ export function useRadarCalculations() {
     
     const { kbr: selectedKBr, newCpa: selectedNewCpa, xpoint, candidateCourse: requiredCourse, candidateSpeed: requiredSpeed } = selectedSolution;
     
-    console.log('[Maneuver] Selected solution - KBr:', selectedKBr.toFixed(1), 
-                'course:', requiredCourse.toFixed(1), 
-                'speed:', requiredSpeed.toFixed(1));
-    
     // ==========================================================================
     // Calculate new relative motion correctly using velocity triangle
     // This is the CORRECT way: new relative = target true motion - new own motion
@@ -1394,10 +1334,6 @@ export function useRadarCalculations() {
     // New relative motion = target true motion - new own motion
     const newRelativeVec = vectorSubtract(targetTrueVec, newOwnMotionVec);
     const { bearing: newKBr, distance: newVBr } = cartesianToPolar(newRelativeVec);
-    
-    console.log('[Maneuver] New relative motion - KBr:', newKBr, 'vBr:', newVBr);
-    console.log('[Maneuver] Target true motion - KB:', target.KB, 'vB:', target.vB);
-    console.log('[Maneuver] New own motion - course:', requiredCourse, 'speed:', requiredSpeed);
     
     // ==========================================================================
     // Calculate additional results: TCPA, delta, timeToManeuver, BCR, BCT
@@ -1467,12 +1403,6 @@ export function useRadarCalculations() {
     
     // Course/speed change amount
     const courseChange = normalizeAngleSigned(requiredCourse - ownCourse);
-    
-    console.log('[Maneuver] After maneuver values:');
-    console.log('  newKBr:', newKBr.toFixed(1), 'newVBr:', newVBr.toFixed(1));
-    console.log('  delta:', delta.toFixed(1), 'newRaSP:', newRaSP.toFixed(1));
-    console.log('  newTCPA:', newTCPA.toFixed(1), 'newPCPA:', newPCPA.toFixed(1), 'newSPCPA:', newSPCPA.toFixed(1));
-    console.log('  newBCR:', newBCR.toFixed(1), 'newBCT:', newBCT.toFixed(1));
     
     return {
       success: true,

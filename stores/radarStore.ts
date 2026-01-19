@@ -580,8 +580,6 @@ export const useRadarStore = defineStore('radar', {
      */
     calculateManeuver() {
       const target = this.targets[this.maneuverTargetIndex];
-      console.log('[Maneuver] Starting calculation for target index:', this.maneuverTargetIndex);
-      console.log('[Maneuver] Target:', target?.index, 'haveCPA:', target?.haveCPA);
       
       // First, clear all secondary targets' newCPA data
       for (let i = 0; i < RADAR_NR_TARGETS; i++) {
@@ -593,25 +591,11 @@ export const useRadarStore = defineStore('radar', {
       
       if (!target || !target.haveCPA) {
         this.maneuverResult = { error: 'No valid target data' };
-        console.log('[Maneuver] No valid target data - aborting');
         if (target) target.haveNewCPA = false;
         return;
       }
       
       const { calculateManeuverFull, calculateSecondaryTargetCPA } = useRadarCalculations();
-      
-      console.log('[Maneuver] Params:', {
-        ownCourse: this.ownCourse,
-        ownSpeed: this.ownSpeed,
-        maneuverByTime: this.maneuverByTime,
-        maneuverTime: this.maneuverTime,
-        maneuverDistance: this.maneuverDistance,
-        maneuverType: this.maneuverType,
-        maneuverByCPA: this.maneuverByCPA,
-        desiredCPA: this.desiredCPA,
-        newCourse: this.newCourse,
-        newSpeed: this.newSpeed
-      });
       
       try {
         const result = calculateManeuverFull({
@@ -627,8 +611,6 @@ export const useRadarStore = defineStore('radar', {
           newCourse: this.newCourse,
           newSpeed: this.newSpeed
         });
-        
-        console.log('[Maneuver] Result:', result);
         
         if (result.success) {
           this.maneuverResult = {
@@ -652,7 +634,6 @@ export const useRadarStore = defineStore('radar', {
             courseChange: result.courseChange,
             maneuverDistance: result.maneuverDistance
           };
-          console.log('[Maneuver] Success - storing result:', this.maneuverResult);
           
           // Update primary target
           target.haveNewCPA = true;
@@ -682,8 +663,6 @@ export const useRadarStore = defineStore('radar', {
           const newSpeed = result.requiredSpeed ?? this.ownSpeed;
           const exactMtime = target.time[1] + (result.timeToManeuver || 0);
           
-          console.log('[Maneuver] Calculating secondary targets with newCourse:', newCourse, 'newSpeed:', newSpeed, 'exactMtime:', exactMtime);
-          
           for (let i = 0; i < RADAR_NR_TARGETS; i++) {
             if (i === this.maneuverTargetIndex) continue; // Skip primary target
             
@@ -691,7 +670,6 @@ export const useRadarStore = defineStore('radar', {
             
             // Only calculate for targets with valid data
             if (!secondaryTarget.haveCPA || secondaryTarget.vBr <= 0) {
-              console.log('[Maneuver] Skipping secondary target', i, '- no valid CPA');
               continue;
             }
             
@@ -705,8 +683,6 @@ export const useRadarStore = defineStore('radar', {
             });
             
             if (secondaryResult.success) {
-              console.log('[Maneuver] Secondary target', i, 'new CPA:', secondaryResult.newCPA?.toFixed(2));
-              
               secondaryTarget.haveNewCPA = true;
               secondaryTarget.haveMpoint = true;
               secondaryTarget.mpoint = secondaryResult.mpoint || { x: 0, y: 0 };
@@ -719,18 +695,14 @@ export const useRadarStore = defineStore('radar', {
               secondaryTarget.newTCPA = secondaryResult.newTCPA || 0;
               secondaryTarget.newPCPA = secondaryResult.newPCPA || 0;
               secondaryTarget.newSPCPA = secondaryResult.newSPCPA || 0;
-            } else {
-              console.log('[Maneuver] Secondary target', i, 'calculation failed');
             }
           }
         } else {
-          console.log('[Maneuver] Failed:', result.error);
           this.maneuverResult = result.error ? { error: result.error } : {};
           target.haveNewCPA = false;
           target.haveMpoint = false;
         }
       } catch (error) {
-        console.error('[Maneuver] Exception:', error);
         this.maneuverResult = { error: 'Calculation error' };
         target.haveNewCPA = false;
         target.haveMpoint = false;
