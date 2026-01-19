@@ -2,13 +2,13 @@
   <div class="flex justify-between items-baseline">
     <UTooltip :text="tooltip" :popper="{ placement: 'left' }">
       <span 
-        class="font-mono text-xs cursor-help border-b border-dotted border-gray-400 dark:border-gray-500 text-gray-900 dark:text-white"
+        class="font-mono text-sm cursor-help border-b border-dotted border-gray-400 dark:border-gray-500 text-gray-900 dark:text-white"
         :class="labelClass"
       >
         {{ label }}:
       </span>
     </UTooltip>
-    <span class="font-mono" :class="valueClass">
+    <span class="font-mono text-sm" :class="valueClass">
       {{ formattedValue }}
     </span>
   </div>
