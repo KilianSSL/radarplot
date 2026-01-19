@@ -24,6 +24,8 @@ This project is a complete port of **Radarplot** by Eddie C. Dost (brainaid GbR)
   - Import .rpt files from original C version
   - LocalStorage auto-save
 - **Internationalization**: English and German languages
+- **SEO Optimized**: Full bilingual SEO with locale-specific OG images
+- **PWA Ready**: Installable as a Progressive Web App
 - **Responsive Design**: Works on desktop and mobile devices
 - **Touch Support**: Pinch-to-zoom like Google Maps
 
@@ -181,6 +183,8 @@ This web-based implementation is a derivative work that ports the original C cod
 - Touch gesture support
 - Interactive hover tooltips
 - Removed licensing/registration system
+- Added SEO meta tags and OG images for social sharing
+- PWA manifest for app installation
 
 ## License
 
