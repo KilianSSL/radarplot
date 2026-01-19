@@ -934,6 +934,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     const cx = state.centerX;
     const cy = state.centerY;
     const pixelsPerNM = state.radiusPixels / state.range;
+    const radius = state.radiusPixels;
     
     // Draw each target
     for (const target of state.targets) {
@@ -942,6 +943,59 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       }
       
       drawTargetData(target, cx, cy, pixelsPerNM, state);
+    }
+    
+    // ==========================================================================
+    // Draw new heading line (VECTOR_NEW_HEADING) when maneuver is planned
+    // Port of radar.c lines 4169-4178: green dashed line from center to edge
+    // showing the new course direction after maneuver
+    // ==========================================================================
+    const maneuverTarget = state.targets[state.maneuverTargetIndex];
+    if (maneuverTarget?.haveNewCPA && state.showHeading) {
+      // Calculate the new course
+      let newCourse: number | undefined;
+      
+      if (state.maneuverType === 'course' && state.maneuverResult?.courseChange !== undefined) {
+        // Course change maneuver: new course = own course + change
+        newCourse = normalizeAngle(state.ownCourse + state.maneuverResult.courseChange);
+      } else if (state.maneuverType === 'course' && state.maneuverResult?.requiredCourse !== undefined) {
+        // Direct course input
+        newCourse = state.maneuverResult.requiredCourse;
+      } else if (state.maneuverType === 'speed') {
+        // Speed change: course stays the same, so no new heading line needed
+        // (or we could show it at the same position, but that would overlap)
+        newCourse = undefined;
+      }
+      
+      if (newCourse !== undefined) {
+        const ctx = getContext();
+        if (ctx) {
+          // Calculate end point of new heading line using bearingDistanceToXY
+          // This handles Course Up mode correctly
+          const endPos = bearingDistanceToXY(cx, cy, newCourse, radius, state.northUp, state.ownCourse);
+          
+          // Draw dashed green line from center to edge
+          ctx.strokeStyle = COLORS.OWN_SHIP;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 4]); // Dashed pattern like original (green_dash_gc)
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(endPos.x, endPos.y);
+          ctx.stroke();
+          ctx.setLineDash([]); // Reset
+          
+          // Track for hover (optional - new heading indicator)
+          trackVector(
+            'new_heading',
+            'new_own',
+            cx, cy, endPos.x, endPos.y,
+            { 
+              label: "New Heading (A')",
+              course: newCourse
+            }
+          );
+        }
+      }
     }
   }
   
