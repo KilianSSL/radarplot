@@ -4,7 +4,7 @@ A modern web-based port of the classic Radarplot application for maritime naviga
 
 ## About
 
-This project is a complete port of **Radarplot** by Erhard Wendt (brainaid GbR) from its original C/GTK+ implementation to a modern TypeScript/Vue.js web application. The original application has been a trusted tool for maritime navigation training and radar plotting since 2005.
+This project is a complete port of **Radarplot** by Christian Wendt (brainaid GbR) from its original C/GTK+ implementation to a modern TypeScript/Vue.js web application. The original application has been a trusted tool for maritime navigation training and radar plotting since 2005.
 
 ## Features
 
@@ -163,9 +163,9 @@ Import these files to verify calculations match the original C version.
 ### Original Application
 
 **Radarplot** - A Nautical Radar Plotting Aid  
-Copyright © 2005 Erhard Wendt (brainaid GbR)
+Copyright © 2005 Christian Wendt (brainaid GbR)
 
-- **Author**: Erhard Wendt <ecd@brainaid.de>
+- **Author**: Christian Wendt <ecd@brainaid.de>
 - **Original Website**: http://brainaid.de/people/ecd/radarplot
 - **Original License**: GNU General Public License v2
 
@@ -196,7 +196,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 ### Why GPL v2?
 
-This web application is a derivative work of the original Radarplot by Erhard Wendt, which is licensed under GPL v2. As per the terms of the GPL, derivative works must also be distributed under the same license, ensuring that this software remains free and open source.
+This web application is a derivative work of the original Radarplot by Christian Wendt, which is licensed under GPL v2. As per the terms of the GPL, derivative works must also be distributed under the same license, ensuring that this software remains free and open source.
 
 ## Disclaimer
 
