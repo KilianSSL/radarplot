@@ -30,7 +30,8 @@ const formattedValue = computed(() => {
   if (props.value === undefined || props.value === null) return '-'
   
   if (typeof props.value === 'string') {
-    const separator = props.unit === '°' ? '' : ' '
+    // No space before degree symbol (handles '°', '° Stb', '° Bb', etc.)
+    const separator = props.unit?.startsWith('°') ? '' : ' '
     return props.unit ? `${props.value}${separator}${props.unit}` : props.value
   }
   
@@ -62,8 +63,8 @@ const formattedValue = computed(() => {
       formatted = num.toFixed(dec)
   }
   
-  // No space before degree symbol, space before other units
-  const separator = props.unit === '°' ? '' : ' '
+  // No space before degree symbol (handles '°', '° Stb', '° Bb', etc.)
+  const separator = props.unit?.startsWith('°') ? '' : ' '
   return props.unit ? `${formatted}${separator}${props.unit}` : formatted
 })
 </script>
