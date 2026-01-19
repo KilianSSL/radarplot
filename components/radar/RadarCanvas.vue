@@ -6,7 +6,7 @@
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
     @mouseup="handleMouseUp"
-    @mouseleave="handleMouseUp"
+    @mouseleave="handleMouseLeave"
     @dblclick="resetZoom"
     @touchstart.prevent="handleTouchStart"
     @touchmove.prevent="handleTouchMove"
@@ -20,6 +20,47 @@
       :class="isDragging ? 'cursor-grabbing' : (zoom > 1 ? 'cursor-grab' : 'cursor-crosshair')"
       @click="handleCanvasClick"
     />
+    <!-- Hover tooltip -->
+    <Transition name="tooltip-fade">
+      <div 
+        v-if="hoveredVector && tooltipVisible"
+        class="absolute pointer-events-none z-10 px-3 py-2 rounded-lg shadow-lg text-sm font-mono
+               bg-slate-800/95 text-white dark:bg-slate-700/95 border border-slate-600/50
+               backdrop-blur-sm"
+        :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }"
+      >
+        <div class="font-semibold mb-1 flex items-center gap-2">
+          <span 
+            class="w-3 h-0.5 rounded"
+            :class="getVectorColorClass(hoveredVector.type)"
+          ></span>
+          {{ hoveredVector.info.label }}
+        </div>
+        <div class="text-xs space-y-0.5 text-slate-300">
+          <div v-if="hoveredVector.info.course !== undefined">
+            {{ $t('radar.course') }}: {{ formatDegrees(hoveredVector.info.course) }}°
+          </div>
+          <div v-if="hoveredVector.info.speed !== undefined">
+            {{ $t('radar.speed') }}: {{ hoveredVector.info.speed.toFixed(1) }} kn
+          </div>
+          <div v-if="hoveredVector.info.bearing !== undefined">
+            {{ $t('radar.bearing') }}: {{ formatDegrees(hoveredVector.info.bearing) }}°
+          </div>
+          <div v-if="hoveredVector.info.cpa !== undefined">
+            CPA: {{ hoveredVector.info.cpa.toFixed(2) }} nm
+          </div>
+          <div v-if="hoveredVector.info.tcpa !== undefined">
+            TCPA: {{ formatTime(hoveredVector.info.tcpa) }}
+          </div>
+          <div v-if="hoveredVector.info.newCpa !== undefined">
+            CPA': {{ hoveredVector.info.newCpa.toFixed(2) }} nm
+          </div>
+          <div v-if="hoveredVector.info.newTcpa !== undefined">
+            TCPA': {{ formatTime(hoveredVector.info.newTcpa) }}
+          </div>
+        </div>
+      </div>
+    </Transition>
     <!-- Zoom indicator -->
     <div 
       v-if="zoom !== 1" 
@@ -33,7 +74,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, type Ref } from 'vue'
 import { useRadarStore } from '~/stores/radarStore'
-import { useRadarRenderer } from '~/composables/radar/useRadarRenderer'
+import { useRadarRenderer, type TrackedVector } from '~/composables/radar/useRadarRenderer'
+import { minutesToTimeString } from '~/utils/radarConstants'
 
 const radarStore = useRadarStore()
 const colorMode = useColorMode()
@@ -67,6 +109,15 @@ const lastTouchDistance = ref(0)
 const lastTouchCenter = ref({ x: 0, y: 0 })
 const lastTapTime = ref(0)
 
+// Hover tooltip state
+const hoveredVector = ref<TrackedVector | null>(null)
+const tooltipVisible = ref(false)
+const tooltipX = ref(0)
+const tooltipY = ref(0)
+
+// Keep renderer reference for hover detection
+let currentRenderer: ReturnType<typeof useRadarRenderer> | null = null
+
 // Calculate optimal canvas size based on container
 function updateCanvasSize() {
   if (!containerRef.value) return
@@ -84,6 +135,7 @@ function render() {
   if (!canvasRef.value) return
   
   const renderer = useRadarRenderer(canvasRef as Ref<HTMLCanvasElement | null>, isDark.value)
+  currentRenderer = renderer
   renderer.render(radarStore.$state, zoom.value, panX.value, panY.value)
 }
 
@@ -189,22 +241,71 @@ function handleMouseDown(event: MouseEvent) {
   panStart.value = { x: panX.value, y: panY.value }
 }
 
-// Handle mouse move for panning
+// Handle mouse move for panning and hover detection
 function handleMouseMove(event: MouseEvent) {
-  if (!isDragging.value) return
+  // Handle panning if dragging
+  if (isDragging.value) {
+    const dx = event.clientX - dragStart.value.x
+    const dy = event.clientY - dragStart.value.y
+    
+    // Limit pan based on zoom level
+    const maxPan = (canvasWidth.value * (zoom.value - 1)) / (2 * zoom.value)
+    panX.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.x + dx / zoom.value))
+    panY.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.y + dy / zoom.value))
+    return
+  }
   
-  const dx = event.clientX - dragStart.value.x
-  const dy = event.clientY - dragStart.value.y
+  // Handle hover detection for tooltips
+  if (!canvasRef.value || !currentRenderer) return
   
-  // Limit pan based on zoom level
-  const maxPan = (canvasWidth.value * (zoom.value - 1)) / (2 * zoom.value)
-  panX.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.x + dx / zoom.value))
-  panY.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.y + dy / zoom.value))
+  const rect = canvasRef.value.getBoundingClientRect()
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+  
+  // Scale coordinates to actual canvas size
+  const scaleX = canvasRef.value.width / rect.width
+  const scaleY = canvasRef.value.height / rect.height
+  const canvasX = x * scaleX
+  const canvasY = y * scaleY
+  
+  // Check for vector under cursor
+  const vector = currentRenderer.getVectorAtPosition(
+    canvasX, canvasY, 10,
+    zoom.value, panX.value, panY.value,
+    canvasRef.value.width, canvasRef.value.height
+  )
+  
+  if (vector) {
+    hoveredVector.value = vector
+    tooltipX.value = event.clientX - rect.left + 15
+    tooltipY.value = event.clientY - rect.top - 10
+    
+    // Keep tooltip within container bounds
+    const containerRect = containerRef.value?.getBoundingClientRect()
+    if (containerRect) {
+      const maxX = containerRect.width - 180 // Approximate tooltip width
+      const maxY = containerRect.height - 100 // Approximate tooltip height
+      tooltipX.value = Math.min(tooltipX.value, maxX)
+      tooltipY.value = Math.max(10, Math.min(tooltipY.value, maxY))
+    }
+    
+    tooltipVisible.value = true
+  } else {
+    tooltipVisible.value = false
+    hoveredVector.value = null
+  }
 }
 
 // Handle mouse up for pan end
 function handleMouseUp() {
   isDragging.value = false
+}
+
+// Handle mouse leave - hide tooltip
+function handleMouseLeave() {
+  isDragging.value = false
+  tooltipVisible.value = false
+  hoveredVector.value = null
 }
 
 // Reset zoom and pan
@@ -310,8 +411,50 @@ function handleTouchEnd(event: TouchEvent) {
   }
 }
 
+// Format degrees with leading zeros
+function formatDegrees(deg: number): string {
+  const rounded = Math.round(deg) % 360
+  return rounded.toString().padStart(3, '0')
+}
+
+// Format time in minutes to readable string
+function formatTime(minutes: number): string {
+  return minutesToTimeString(minutes)
+}
+
+// Get Tailwind color class for vector type indicator
+function getVectorColorClass(type: TrackedVector['type']): string {
+  switch (type) {
+    case 'own':
+    case 'new_own':
+      return 'bg-green-500'
+    case 'true':
+      return 'bg-blue-500'
+    case 'relative':
+    case 'new_relative':
+      return 'bg-red-500'
+    case 'cpa':
+    case 'new_cpa':
+      return 'bg-red-600'
+    default:
+      return 'bg-gray-500'
+  }
+}
+
 // Expose render function
 defineExpose({
   render
 })
 </script>
+
+<style scoped>
+.tooltip-fade-enter-active,
+.tooltip-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.tooltip-fade-enter-from,
+.tooltip-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+</style>

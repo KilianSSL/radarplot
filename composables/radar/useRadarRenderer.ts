@@ -20,9 +20,120 @@ import {
   TARGET_LETTERS
 } from '~/utils/radarConstants';
 
+// Types for vector tracking and tooltips
+export interface TrackedVector {
+  id: string;
+  type: 'own' | 'true' | 'relative' | 'cpa' | 'new_own' | 'new_relative' | 'new_cpa';
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  targetIndex?: number;
+  info: VectorInfo;
+}
+
+export interface VectorInfo {
+  label: string;
+  course?: number;
+  speed?: number;
+  bearing?: number;
+  cpa?: number;
+  tcpa?: number;
+  newCpa?: number;
+  newTcpa?: number;
+}
+
 export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDark: boolean = false) {
   // Get color scheme based on mode
   const COLORS = getColors(isDark);
+  
+  // Tracked vectors for hover detection
+  let trackedVectors: TrackedVector[] = [];
+  
+  // Clear tracked vectors (called at start of each render)
+  function clearTrackedVectors() {
+    trackedVectors = [];
+  }
+  
+  // Track a vector for hover detection
+  function trackVector(
+    id: string,
+    type: TrackedVector['type'],
+    x1: number, y1: number, x2: number, y2: number,
+    info: VectorInfo,
+    targetIndex?: number
+  ) {
+    trackedVectors.push({ id, type, x1, y1, x2, y2, info, targetIndex });
+  }
+  
+  // Calculate distance from point to line segment
+  function pointToLineDistance(px: number, py: number, x1: number, y1: number, x2: number, y2: number): number {
+    const A = px - x1;
+    const B = py - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = -1;
+    
+    if (lenSq !== 0) param = dot / lenSq;
+
+    let xx: number, yy: number;
+
+    if (param < 0) {
+      xx = x1;
+      yy = y1;
+    } else if (param > 1) {
+      xx = x2;
+      yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+
+    const dx = px - xx;
+    const dy = py - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  
+  // Find vector at given canvas position (returns closest within threshold)
+  function getVectorAtPosition(
+    canvasX: number, 
+    canvasY: number, 
+    threshold: number = 8,
+    zoom: number = 1,
+    panX: number = 0,
+    panY: number = 0,
+    canvasWidth: number = 0,
+    canvasHeight: number = 0
+  ): TrackedVector | null {
+    // Transform canvas coordinates back to pre-transform space
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+    
+    // Reverse the transformation: ctx.translate(centerX, centerY) -> ctx.scale(zoom) -> ctx.translate(-centerX + panX, -centerY + panY)
+    const tx = (canvasX - centerX) / zoom + centerX - panX;
+    const ty = (canvasY - centerY) / zoom + centerY - panY;
+    
+    let closest: TrackedVector | null = null;
+    let closestDist = threshold / zoom; // Scale threshold by zoom
+    
+    for (const vector of trackedVectors) {
+      const dist = pointToLineDistance(tx, ty, vector.x1, vector.y1, vector.x2, vector.y2);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = vector;
+      }
+    }
+    
+    return closest;
+  }
+  
+  // Get all tracked vectors (for debugging)
+  function getTrackedVectors(): TrackedVector[] {
+    return [...trackedVectors];
+  }
   
   /**
    * Rotate coordinates for Course Up mode
@@ -830,6 +941,18 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       // C code: radar_set_vector(radar, &s->vectors[VECTOR_RELATIVE], ...)
       if (pos0 && target.vBr > 0) {
         drawVector(pos0.x, pos0.y, pos1.x, pos1.y, COLORS.RELATIVE_MOTION, 2);
+        // Track relative motion vector for hover
+        trackVector(
+          `relative_${target.index}`,
+          'relative',
+          pos0.x, pos0.y, pos1.x, pos1.y,
+          { 
+            label: `${targetLetter} Relative Motion`,
+            bearing: target.KBr,
+            speed: target.vBr
+          },
+          target.index
+        );
         // C code: radar_mark_vector(radar, s, VECTOR_RELATIVE, ...) - arrow + circle marker
         drawMidArrowRelative(pos0.x, pos0.y, pos1.x, pos1.y, COLORS.RELATIVE_MOTION);
         
@@ -854,6 +977,18 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       // Draw perpendicular line from center (own position) to CPA point
       // This shows the closest point of approach on the target's relative track
       drawVector(cx, cy, cpaX, cpaY, COLORS.CPA_MARKER, 1.5);
+      // Track CPA line for hover
+      trackVector(
+        `cpa_${target.index}`,
+        'cpa',
+        cx, cy, cpaX, cpaY,
+        { 
+          label: `${targetLetter} CPA`,
+          cpa: target.CPA,
+          tcpa: target.TCPA
+        },
+        target.index
+      );
       
       // Smart label positioning: find best spot avoiding all nearby lines
       const linesToAvoid: Array<{ x1: number; y1: number; x2: number; y2: number }> = [
@@ -906,16 +1041,40 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         const apexX = pos0.x + ownDistancePixels * sinReverse;
         const apexY = pos0.y - ownDistancePixels * cosReverse;
         
-        // Draw VECTOR_OWN: from apex to B₀ (blue line with mid-arrow)
+        // Draw VECTOR_OWN: from apex to B₀ (green line with mid-arrow)
         // C code: radar_mark_vector(radar, s, VECTOR_OWN, s->own_mark_gc, x, y, xs[0], ys[0]);
         drawVector(apexX, apexY, pos0.x, pos0.y, COLORS.OWN_SHIP, 2);
         drawMidArrowOwn(apexX, apexY, pos0.x, pos0.y, COLORS.OWN_SHIP);
+        // Track own ship vector for hover
+        trackVector(
+          `own_${target.index}`,
+          'own',
+          apexX, apexY, pos0.x, pos0.y,
+          { 
+            label: 'Own Ship Vector',
+            course: state.ownCourse,
+            speed: state.ownSpeed
+          },
+          target.index
+        );
         
-        // Draw VECTOR_TRUE: from apex to B₁ (green line with mid-arrow)
+        // Draw VECTOR_TRUE: from apex to B₁ (blue line with mid-arrow)
         // C code: radar_mark_vector(radar, s, VECTOR_TRUE, s->true_mark_gc, x, y, xs[1], ys[1]);
         if (target.vB > 0) {
           drawVector(apexX, apexY, pos1.x, pos1.y, COLORS.TRUE_MOTION, 2);
           drawMidArrowTrue(apexX, apexY, pos1.x, pos1.y, COLORS.TRUE_MOTION);
+          // Track true motion vector for hover
+          trackVector(
+            `true_${target.index}`,
+            'true',
+            apexX, apexY, pos1.x, pos1.y,
+            { 
+              label: `${targetLetter} True Motion`,
+              course: target.KB,
+              speed: target.vB
+            },
+            target.index
+          );
         }
       }
     }
@@ -981,6 +1140,19 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         ctx.moveTo(mpointX, mpointY);
         ctx.lineTo(extEndX, extEndY);
         ctx.stroke();
+        
+        // Track new relative motion line for hover
+        trackVector(
+          `new_relative_${target.index}`,
+          'new_relative',
+          mpointX, mpointY, extEndX, extEndY,
+          { 
+            label: `${targetLetter} New Relative Motion`,
+            bearing: target.newKBr,
+            speed: target.newVBr
+          },
+          target.index
+        );
       }
       
       // ==========================================================================
@@ -994,6 +1166,19 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       ctx.moveTo(cx, cy);
       ctx.lineTo(newCpaX, newCpaY);
       ctx.stroke();
+      
+      // Track new CPA line for hover
+      trackVector(
+        `new_cpa_${target.index}`,
+        'new_cpa',
+        cx, cy, newCpaX, newCpaY,
+        { 
+          label: `${targetLetter} New CPA`,
+          newCpa: target.newCPA,
+          newTcpa: target.newTCPA
+        },
+        target.index
+      );
       
       // ==========================================================================
       // Draw new CPA' label (no marker - matches original radarplot)
@@ -1079,6 +1264,25 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       ctx.lineTo(xpointX, xpointY);
       ctx.stroke();
       ctx.setLineDash([]);
+      
+      // Track new own ship vector for hover
+      const newCourse = state.maneuverType === 'course' && state.maneuverResult?.courseChange !== undefined
+        ? normalizeAngle(state.ownCourse + state.maneuverResult.courseChange)
+        : state.ownCourse;
+      const newSpeed = state.maneuverType === 'speed' && state.maneuverResult?.requiredSpeed !== undefined
+        ? state.maneuverResult.requiredSpeed
+        : state.ownSpeed;
+      trackVector(
+        `new_own_${target.index}`,
+        'new_own',
+        apexX, apexY, xpointX, xpointY,
+        { 
+          label: 'New Own Ship Vector',
+          course: newCourse,
+          speed: newSpeed
+        },
+        target.index
+      );
       
       // Draw arrow on new own ship vector ONLY for course changes
       // For speed changes, the vector points in the same direction as the old one,
@@ -1347,6 +1551,9 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     const ctx = getContext();
     if (!ctx) return;
     
+    // Clear tracked vectors at start of each render
+    clearTrackedVectors();
+    
     // Get canvas dimensions
     const width = canvasRef.value.width;
     const height = canvasRef.value.height;
@@ -1404,6 +1611,10 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     drawTargetMarker,
     drawCPAMarker,
     nmToPixels,
-    polarToCanvas
+    polarToCanvas,
+    
+    // Hover detection
+    getVectorAtPosition,
+    getTrackedVectors
   };
 }
