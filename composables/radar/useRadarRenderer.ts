@@ -1048,7 +1048,8 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         drawMidArrowRelative(pos0.x, pos0.y, pos1.x, pos1.y, relativeColor);
         
         // Extend relative motion vector forward toward CPA
-        // C code: radar_set_vector(radar, &s->vectors[VECTOR_REL_EXT], ...)
+        // C code: radar_set_vector(radar, &s->vectors[VECTOR_REL_EXT], s->ext_gc, ...)
+        // ext_gc is SOLID for maneuver target, DASHED for others
         if (target.haveCPA) {
           // Use trueToCanvas for Course Up support
           const cpaPos = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
@@ -1057,7 +1058,11 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
           const relExtVectorId = `relative_ext_${target.index}`;
           const relExtColor = getVectorColor(COLORS.RELATIVE_MOTION, relExtVectorId);
           
-          drawVector(pos1.x, pos1.y, cpaPos.x, cpaPos.y, relExtColor, 1, [3, 3]);
+          // For maneuver target: solid line, for others: dashed line (matches C code)
+          const isManeuverTarget = target.index === state.maneuverTargetIndex;
+          const lineDash = isManeuverTarget ? [] : [3, 3];
+          
+          drawVector(pos1.x, pos1.y, cpaPos.x, cpaPos.y, relExtColor, 1, lineDash);
           
           // Track extension line for hover (same info as relative motion)
           trackVector(
@@ -1077,6 +1082,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     
     // Draw CPA marker and line from center (perpendicular to target track)
     // C code: radar_set_vector(radar, &s->vectors[VECTOR_CPA], s->cpa_gc, radar->cx, radar->cy, x, y);
+    // cpa_gc is SOLID for maneuver target, DASHED for others
     if (target.haveCPA && target.CPA >= 0) {
       // Use trueToCanvas for Course Up support
       const cpaCanvas = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
@@ -1086,9 +1092,13 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       const cpaVectorId = `cpa_${target.index}`;
       const cpaColor = getVectorColor(COLORS.CPA_MARKER, cpaVectorId);
       
+      // For maneuver target: solid line, for others: dashed line (matches C code)
+      const isManeuverTarget = target.index === state.maneuverTargetIndex;
+      const cpaLineDash = isManeuverTarget ? [] : [3, 3];
+      
       // Draw perpendicular line from center (own position) to CPA point
       // This shows the closest point of approach on the target's relative track
-      drawVector(cx, cy, cpaX, cpaY, cpaColor, 1.5);
+      drawVector(cx, cy, cpaX, cpaY, cpaColor, 1.5, cpaLineDash);
       // Track CPA line for hover
       trackVector(
         cpaVectorId,
@@ -1205,20 +1215,58 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     // This is the port of radar_calculate_secondary() behavior from the original C code
     // ==========================================================================
     if (target.haveNewCPA && target.index !== state.maneuverTargetIndex) {
-      // SECONDARY TARGET: Only draw the new CPA point and line (not the full maneuver visualization)
+      // SECONDARY TARGET: Draw new relative motion line and new CPA (not the full maneuver visualization)
+      // For secondary targets, use dashed lines (matches C code: ext_gc and cpa_gc are DASHED for non-mtarget)
       const ctx = getContext();
       if (ctx) {
         // Get mpoint and newCpa positions
         const mpoint = trueToCanvas(cx, cy, target.mpoint.x, target.mpoint.y, pixelsPerNM, state.northUp, state.ownCourse);
         const newCpa = trueToCanvas(cx, cy, target.newCpa.x, target.newCpa.y, pixelsPerNM, state.northUp, state.ownCourse);
         
-        // Draw new CPA line from origin to new CPA point
+        // Draw new relative motion line from mpoint through newCpa (DASHED for secondary targets)
+        // C code: VECTOR_NEW_REL0 uses ext_gc (dashed for non-mtarget)
+        const dx = newCpa.x - mpoint.x;
+        const dy = newCpa.y - mpoint.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist > 0) {
+          const newRelVectorId = `new_relative_${target.index}`;
+          const newRelColor = getVectorColor(COLORS.RELATIVE_MOTION, newRelVectorId);
+          
+          // Extend the line beyond newCpa to the edge of radar
+          const extendFactor = state.radiusPixels / dist * 1.5;
+          const extEndX = mpoint.x + dx * extendFactor;
+          const extEndY = mpoint.y + dy * extendFactor;
+          
+          ctx.strokeStyle = newRelColor;
+          ctx.lineWidth = 1;
+          ctx.setLineDash([3, 3]);  // Dashed for secondary targets
+          ctx.beginPath();
+          ctx.moveTo(mpoint.x, mpoint.y);
+          ctx.lineTo(extEndX, extEndY);
+          ctx.stroke();
+          
+          // Track new relative motion line for hover
+          trackVector(
+            newRelVectorId,
+            'new_relative',
+            mpoint.x, mpoint.y, extEndX, extEndY,
+            { 
+              label: `${targetLetter} New Relative Motion`,
+              bearing: target.newKBr,
+              speed: target.newVBr
+            },
+            target.index
+          );
+        }
+        
+        // Draw new CPA line from origin to new CPA point (DASHED for secondary targets)
         const newCpaVectorId = `new_cpa_${target.index}`;
         const newCpaColor = getVectorColor(COLORS.CPA_MARKER, newCpaVectorId);
         
         ctx.strokeStyle = newCpaColor;
         ctx.lineWidth = 1.5;
-        ctx.setLineDash([]);
+        ctx.setLineDash([3, 3]);  // Dashed for secondary targets
         ctx.beginPath();
         ctx.moveTo(cx, cy);
         ctx.lineTo(newCpa.x, newCpa.y);
