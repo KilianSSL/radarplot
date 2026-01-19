@@ -998,11 +998,16 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         if (target.haveCPA) {
           // Use trueToCanvas for Course Up support
           const cpaPos = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
-          drawVector(pos1.x, pos1.y, cpaPos.x, cpaPos.y, relativeColor, 1, [3, 3]);
+          
+          // Track and color the extension line independently for hover highlight
+          const relExtVectorId = `relative_ext_${target.index}`;
+          const relExtColor = getVectorColor(COLORS.RELATIVE_MOTION, relExtVectorId);
+          
+          drawVector(pos1.x, pos1.y, cpaPos.x, cpaPos.y, relExtColor, 1, [3, 3]);
           
           // Track extension line for hover (same info as relative motion)
           trackVector(
-            `relative_ext_${target.index}`,
+            relExtVectorId,
             'relative',
             pos1.x, pos1.y, cpaPos.x, cpaPos.y,
             { 
