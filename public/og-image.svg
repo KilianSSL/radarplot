@@ -156,7 +156,7 @@
   <g transform="translate(0, 580)">
     <rect width="1200" height="50" fill="#020420" opacity="0.5"/>
     <text x="600" y="32" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">
-      Based on Radarplot by Eddie C. Dost • GPL v2 License • radarplot.app
+      Based on Radarplot by Erhard Wendt • GPL v2 License • radarplot.app
     </text>
   </g>
 </svg>

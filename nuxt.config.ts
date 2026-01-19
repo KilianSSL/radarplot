@@ -128,7 +128,7 @@ export default defineNuxtConfig({
         { name: 'title', content: 'Radarplot - Free Online Maritime Radar Plotting Tool' },
         { name: 'description', content: 'Free online radar plotting tool for maritime navigation. Calculate CPA, TCPA, true motion vectors, and plan collision avoidance maneuvers. Perfect for nautical training and COLREGs education.' },
         { name: 'keywords', content: 'radar plotting, maritime navigation, CPA calculator, TCPA, collision avoidance, COLREGs, nautical training, radar plot, relative motion, true motion, vessel tracking, marine navigation tool, seamanship, navigation aid' },
-        { name: 'author', content: 'Based on Radarplot by Eddie C. Dost (brainaid GbR)' },
+        { name: 'author', content: 'Based on Radarplot by Erhard Wendt (brainaid GbR)' },
         { name: 'robots', content: 'index, follow' },
         
         // Open Graph / Facebook

@@ -1146,7 +1146,75 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     // Note: BCR (Bow Crossing Range) is shown in the data panel only, not on the radar canvas
     // (matches original radarplot behavior)
     
-    // Draw post-maneuver vectors if exists
+    // ==========================================================================
+    // Draw new CPA for ALL targets that have haveNewCPA (including secondary targets)
+    // This is the port of radar_calculate_secondary() behavior from the original C code
+    // ==========================================================================
+    if (target.haveNewCPA && target.index !== state.maneuverTargetIndex) {
+      // SECONDARY TARGET: Only draw the new CPA point and line (not the full maneuver visualization)
+      const ctx = getContext();
+      if (ctx) {
+        // Get mpoint and newCpa positions
+        const mpoint = trueToCanvas(cx, cy, target.mpoint.x, target.mpoint.y, pixelsPerNM, state.northUp, state.ownCourse);
+        const newCpa = trueToCanvas(cx, cy, target.newCpa.x, target.newCpa.y, pixelsPerNM, state.northUp, state.ownCourse);
+        
+        // Draw new CPA line from origin to new CPA point
+        const newCpaVectorId = `new_cpa_${target.index}`;
+        const newCpaColor = getVectorColor(COLORS.CPA_MARKER, newCpaVectorId);
+        
+        ctx.strokeStyle = newCpaColor;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(newCpa.x, newCpa.y);
+        ctx.stroke();
+        
+        // Track new CPA line for hover
+        trackVector(
+          newCpaVectorId,
+          'new_cpa',
+          cx, cy, newCpa.x, newCpa.y,
+          { 
+            label: `${targetLetter} New CPA`,
+            newCpa: target.newCPA,
+            newTcpa: target.newTCPA
+          },
+          target.index
+        );
+        
+        // Draw new CPA' label for secondary target
+        const newCpaLinesToAvoid: Array<{ x1: number; y1: number; x2: number; y2: number }> = [
+          { x1: cx, y1: cy, x2: newCpa.x, y2: newCpa.y },
+          { x1: cx, y1: 0, x2: cx, y2: cy * 2 }
+        ];
+        
+        // Add original CPA line if exists
+        if (target.haveCPA) {
+          const origCpaPos = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
+          newCpaLinesToAvoid.push({ x1: cx, y1: cy, x2: origCpaPos.x, y2: origCpaPos.y });
+        }
+        
+        const newCpaPointsToAvoid = [{ x: cx, y: cy }];
+        if (target.haveCPA) {
+          const origCpaAvoidPos = trueToCanvas(cx, cy, target.cpa.x, target.cpa.y, pixelsPerNM, state.northUp, state.ownCourse);
+          newCpaPointsToAvoid.push({ x: origCpaAvoidPos.x, y: origCpaAvoidPos.y });
+        }
+        
+        const newCpaBestPos = findBestLabelPosition(newCpa.x, newCpa.y, 30, newCpaLinesToAvoid, newCpaPointsToAvoid);
+        
+        drawLabel(
+          newCpaBestPos.x, newCpaBestPos.y,
+          `CPA' ${target.newCPA.toFixed(1)}nm`,
+          COLORS.CPA_MARKER,
+          FONTS.LABEL_SIZE - 1,
+          COLORS.LABEL_BG,
+          newCpaBestPos.align
+        );
+      }
+    }
+    
+    // Draw post-maneuver vectors for PRIMARY target (full maneuver visualization)
     if (target.haveNewCPA && target.index === state.maneuverTargetIndex) {
       const ctx = getContext();
       if (!ctx) return;

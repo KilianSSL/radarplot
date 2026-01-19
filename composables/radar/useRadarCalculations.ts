@@ -1502,6 +1502,122 @@ export function useRadarCalculations() {
   }
   
   // ==========================================================================
+  // Secondary Target CPA Calculation
+  // Port of radar_calculate_secondary() and radar_calculate_new_cpa() from radar.c
+  // 
+  // When a maneuver is planned for the primary target, this function calculates
+  // the resulting CPA for all other (secondary) targets using the same
+  // maneuver parameters (new course/speed, maneuver time).
+  // ==========================================================================
+  
+  /**
+   * Calculate new CPA for a secondary target given the primary target's maneuver parameters
+   * 
+   * @param target - The secondary target
+   * @param ownCourse - Current own course
+   * @param ownSpeed - Current own speed
+   * @param newCourse - New course after maneuver (from primary target calculation)
+   * @param newSpeed - New speed after maneuver (from primary target calculation)
+   * @param exactMtime - Exact maneuver time (from primary target calculation)
+   */
+  function calculateSecondaryTargetCPA(params: {
+    target: Target;
+    ownCourse: number;
+    ownSpeed: number;
+    newCourse: number;
+    newSpeed: number;
+    exactMtime: number;
+  }): {
+    success: boolean;
+    mpoint?: VectorXY;
+    newCpaPoint?: VectorXY;
+    xpoint?: VectorXY;
+    newKBr?: number;
+    newVBr?: number;
+    newCPA?: number;
+    newTCPA?: number;
+    newPCPA?: number;
+    newSPCPA?: number;
+    delta?: number;
+  } {
+    const { target, ownCourse, ownSpeed, newCourse, newSpeed, exactMtime } = params;
+    
+    // Check if target has valid CPA data
+    if (!target.haveCPA || target.vBr <= 0 || target.TCPA <= 0) {
+      return { success: false };
+    }
+    
+    const pos1 = target.sight[1];
+    if (!pos1) {
+      return { success: false };
+    }
+    
+    // Calculate delta_t: time from second observation to maneuver point
+    const deltaT = exactMtime - target.time[1];
+    
+    // Advance the target position along the relative motion line to the maneuver time
+    // Port of: advance(radar, &s->sight[1], &s->cpa, &s->mpoint, delta_t / s->TCPA)
+    const fraction = deltaT / target.TCPA;
+    const mpoint = advancePosition(pos1, target.cpa, fraction);
+    
+    // Calculate p0_sub_own for this target (apex of velocity triangle)
+    const ownDistDuringObs = ownSpeed * (target.deltaTime / 60);
+    const reverseCourse = normalizeAngle(ownCourse + 180);
+    const reverseOwnVec = polarToCartesian(reverseCourse, ownDistDuringObs);
+    const p0SubOwn = vectorAdd(target.sight[0], reverseOwnVec);
+    
+    // Calculate xpoint using new course/speed
+    // Port of: xpoint = p0_sub_own + l * direction(ncourse)
+    const l = newSpeed * (target.deltaTime / 60);
+    const newOwnVec = polarToCartesian(newCourse, l);
+    const xpoint = vectorAdd(p0SubOwn, newOwnVec);
+    
+    // Calculate new relative motion direction: from xpoint to sight[1]
+    // Port of: new_KBr = course(radar, &s->xpoint, &s->sight[1])
+    const relVec = vectorSubtract(pos1, xpoint);
+    const { bearing: newKBr, distance: relDist } = cartesianToPolar(relVec);
+    const newVBr = relDist / (target.deltaTime / 60);
+    
+    // Calculate new CPA as perpendicular distance from origin to new relative motion line through mpoint
+    // Port of radar_calculate_new_cpa() geometry
+    const newKBrRad = degToRad(newKBr);
+    const dirX = Math.sin(newKBrRad);
+    const dirY = Math.cos(newKBrRad);
+    
+    // Perpendicular distance from origin to line through mpoint with direction (dirX, dirY)
+    const crossProduct = Math.abs(mpoint.x * dirY - mpoint.y * dirX);
+    const newCPA = crossProduct;
+    
+    // New CPA point is the perpendicular projection of origin onto the line
+    const dotProd = mpoint.x * dirX + mpoint.y * dirY;
+    const t = -dotProd;
+    const newCpaPoint: VectorXY = {
+      x: mpoint.x + t * dirX,
+      y: mpoint.y + t * dirY
+    };
+    
+    // Calculate additional values
+    const newPCPA = cartesianToPolar(newCpaPoint).bearing;
+    const newSPCPA = normalizeAngle(newPCPA - newCourse);
+    const newTCPA = newVBr > 0 ? (vectorMagnitude(vectorSubtract(mpoint, newCpaPoint)) / newVBr) * 60 : 0;
+    const delta = normalizeAngleSigned(newKBr - target.KBr);
+    
+    return {
+      success: true,
+      mpoint,
+      newCpaPoint,
+      xpoint,
+      newKBr,
+      newVBr,
+      newCPA,
+      newTCPA,
+      newPCPA,
+      newSPCPA,
+      delta
+    };
+  }
+  
+  // ==========================================================================
   // Public API
   // ==========================================================================
   
@@ -1515,6 +1631,7 @@ export function useRadarCalculations() {
     calculateCPAFromCourse,
     calculateTarget,
     calculateManeuver,
-    calculateManeuverFull
+    calculateManeuverFull,
+    calculateSecondaryTargetCPA
   };
 }

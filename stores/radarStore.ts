@@ -576,11 +576,20 @@ export const useRadarStore = defineStore('radar', {
     
     /**
      * Calculate maneuver result for the selected target using global maneuver settings
+     * Also calculates new CPA for ALL secondary targets (like original C code)
      */
     calculateManeuver() {
       const target = this.targets[this.maneuverTargetIndex];
       console.log('[Maneuver] Starting calculation for target index:', this.maneuverTargetIndex);
       console.log('[Maneuver] Target:', target?.index, 'haveCPA:', target?.haveCPA);
+      
+      // First, clear all secondary targets' newCPA data
+      for (let i = 0; i < RADAR_NR_TARGETS; i++) {
+        if (i !== this.maneuverTargetIndex) {
+          this.targets[i].haveNewCPA = false;
+          this.targets[i].haveMpoint = false;
+        }
+      }
       
       if (!target || !target.haveCPA) {
         this.maneuverResult = { error: 'No valid target data' };
@@ -589,7 +598,7 @@ export const useRadarStore = defineStore('radar', {
         return;
       }
       
-      const { calculateManeuverFull } = useRadarCalculations();
+      const { calculateManeuverFull, calculateSecondaryTargetCPA } = useRadarCalculations();
       
       console.log('[Maneuver] Params:', {
         ownCourse: this.ownCourse,
@@ -645,6 +654,7 @@ export const useRadarStore = defineStore('radar', {
           };
           console.log('[Maneuver] Success - storing result:', this.maneuverResult);
           
+          // Update primary target
           target.haveNewCPA = true;
           target.haveMpoint = true;
           target.mpoint = result.mpoint || { x: 0, y: 0 };
@@ -663,6 +673,56 @@ export const useRadarStore = defineStore('radar', {
           target.newBCR = result.newBCR || 0;
           target.newBCT = result.newBCT || 0;
           target.newBCt = result.newBCt || 0;
+          
+          // ==========================================================================
+          // Calculate new CPA for ALL secondary targets
+          // Port of radar_calculate_secondary() from radar.c
+          // ==========================================================================
+          const newCourse = result.requiredCourse ?? this.ownCourse;
+          const newSpeed = result.requiredSpeed ?? this.ownSpeed;
+          const exactMtime = target.time[1] + (result.timeToManeuver || 0);
+          
+          console.log('[Maneuver] Calculating secondary targets with newCourse:', newCourse, 'newSpeed:', newSpeed, 'exactMtime:', exactMtime);
+          
+          for (let i = 0; i < RADAR_NR_TARGETS; i++) {
+            if (i === this.maneuverTargetIndex) continue; // Skip primary target
+            
+            const secondaryTarget = this.targets[i];
+            
+            // Only calculate for targets with valid data
+            if (!secondaryTarget.haveCPA || secondaryTarget.vBr <= 0) {
+              console.log('[Maneuver] Skipping secondary target', i, '- no valid CPA');
+              continue;
+            }
+            
+            const secondaryResult = calculateSecondaryTargetCPA({
+              target: secondaryTarget,
+              ownCourse: this.ownCourse,
+              ownSpeed: this.ownSpeed,
+              newCourse,
+              newSpeed,
+              exactMtime
+            });
+            
+            if (secondaryResult.success) {
+              console.log('[Maneuver] Secondary target', i, 'new CPA:', secondaryResult.newCPA?.toFixed(2));
+              
+              secondaryTarget.haveNewCPA = true;
+              secondaryTarget.haveMpoint = true;
+              secondaryTarget.mpoint = secondaryResult.mpoint || { x: 0, y: 0 };
+              secondaryTarget.newCpa = secondaryResult.newCpaPoint || { x: 0, y: 0 };
+              secondaryTarget.xpoint = secondaryResult.xpoint || { x: 0, y: 0 };
+              secondaryTarget.newKBr = secondaryResult.newKBr || 0;
+              secondaryTarget.newVBr = secondaryResult.newVBr || 0;
+              secondaryTarget.newCPA = secondaryResult.newCPA || 0;
+              secondaryTarget.delta = secondaryResult.delta || 0;
+              secondaryTarget.newTCPA = secondaryResult.newTCPA || 0;
+              secondaryTarget.newPCPA = secondaryResult.newPCPA || 0;
+              secondaryTarget.newSPCPA = secondaryResult.newSPCPA || 0;
+            } else {
+              console.log('[Maneuver] Secondary target', i, 'calculation failed');
+            }
+          }
         } else {
           console.log('[Maneuver] Failed:', result.error);
           this.maneuverResult = result.error ? { error: result.error } : {};
