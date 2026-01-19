@@ -1372,30 +1372,10 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         }
       }
       
-      // ==========================================================================
-      // Draw dashed line from B₁ to mpoint if they differ significantly
-      // This shows the continuation of relative motion to maneuver point
-      // ==========================================================================
-      if (target.sight && target.sight[1]) {
-        const b1 = target.sight[1]; // B₁ position in nautical miles (true coords)
-        const mpx = target.mpoint.x;
-        const mpy = target.mpoint.y;
-        
-        // Check if mpoint is different from B₁
-        if (Math.abs(b1.x - mpx) > 0.1 || Math.abs(b1.y - mpy) > 0.1) {
-          // Convert B₁ to canvas with Course Up support
-          const b1Canvas = trueToCanvas(cx, cy, b1.x, b1.y, pixelsPerNM, state.northUp, state.ownCourse);
-          
-          ctx.strokeStyle = COLORS.RELATIVE_MOTION;
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([4, 4]);
-          ctx.beginPath();
-          ctx.moveTo(b1Canvas.x, b1Canvas.y);
-          ctx.lineTo(mpointX, mpointY);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-      }
+      // Note: We don't need to draw a separate dashed line from B₁ to mpoint
+      // because the original extension (B₁ → CPA) already covers this path.
+      // The maneuver point (mpoint) lies on the relative motion line toward CPA,
+      // so drawing B₁→mpoint would just overlap with the existing B₁→CPA extension.
     }
   }
   
