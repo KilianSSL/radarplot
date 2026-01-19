@@ -1,32 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
-  <!-- Background (square - iOS will apply its own rounding) -->
+  <!-- Full background (required for Apple icons) -->
   <rect width="180" height="180" fill="#0f172a"/>
   
-  <!-- Radar rings -->
-  <circle cx="90" cy="90" r="75" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.5"/>
-  <circle cx="90" cy="90" r="55" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.4"/>
-  <circle cx="90" cy="90" r="35" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.35"/>
-  <circle cx="90" cy="90" r="18" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.3"/>
+  <!-- Outer subtle ring -->
+  <circle cx="90" cy="90" r="75" fill="none" stroke="#1e293b" stroke-width="2"/>
   
-  <!-- Bearing lines -->
-  <line x1="90" y1="10" x2="90" y2="170" stroke="#22c55e" stroke-width="1" opacity="0.25"/>
-  <line x1="10" y1="90" x2="170" y2="90" stroke="#22c55e" stroke-width="1" opacity="0.25"/>
-  
-  <!-- Heading line (prominent) -->
-  <line x1="90" y1="90" x2="90" y2="18" stroke="#22c55e" stroke-width="5"/>
-  <!-- Heading arrow -->
-  <polygon points="90,12 82,28 98,28" fill="#22c55e"/>
-  
-  <!-- Own ship position -->
-  <circle cx="90" cy="90" r="8" fill="#22c55e"/>
-  <circle cx="90" cy="90" r="4" fill="#0f172a"/>
-  
-  <!-- Target marker (red X) -->
-  <g transform="translate(135, 50)">
-    <line x1="-10" y1="-10" x2="10" y2="10" stroke="#ef4444" stroke-width="5" stroke-linecap="round"/>
-    <line x1="10" y1="-10" x2="-10" y2="10" stroke="#ef4444" stroke-width="5" stroke-linecap="round"/>
+  <!-- Radar content (centered with padding) -->
+  <g transform="translate(90, 90)">
+    <!-- Radar rings -->
+    <circle r="60" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.5"/>
+    <circle r="40" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.4"/>
+    <circle r="20" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.3"/>
+    
+    <!-- Bearing lines -->
+    <line x1="0" y1="-65" x2="0" y2="65" stroke="#22c55e" stroke-width="0.75" opacity="0.25"/>
+    <line x1="-65" y1="0" x2="65" y2="0" stroke="#22c55e" stroke-width="0.75" opacity="0.25"/>
+    
+    <!-- Heading line (prominent) -->
+    <line x1="0" y1="0" x2="0" y2="-55" stroke="#22c55e" stroke-width="3"/>
+    
+    <!-- Own ship position -->
+    <circle r="4" fill="#22c55e"/>
+    
+    <!-- Target marker -->
+    <g transform="translate(30, -35)">
+      <line x1="-5" y1="-5" x2="5" y2="5" stroke="#ef4444" stroke-width="3"/>
+      <line x1="5" y1="-5" x2="-5" y2="5" stroke="#ef4444" stroke-width="3"/>
+    </g>
+    
+    <!-- Relative motion vector -->
+    <line x1="30" y1="-35" x2="10" y2="-10" stroke="#ef4444" stroke-width="2" opacity="0.8"/>
   </g>
-  
-  <!-- Relative motion vector -->
-  <line x1="135" y1="50" x2="105" y2="78" stroke="#ef4444" stroke-width="3" opacity="0.9"/>
 </svg>
