@@ -1,6 +1,6 @@
 {
   "name": "radarplot",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Maritime Radar Plot - Nuxt 3 Web Application",
   "type": "module",
   "private": true,
