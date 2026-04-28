@@ -39,7 +39,7 @@
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
             {{ $t('observation.bearing') }}
           </label>
-          <UButtonGroup size="sm" class="w-full">
+          <UFieldGroup size="sm" class="w-full">
             <UButton
               :color="bearingType0 === 'rakrp' ? 'primary' : 'neutral'"
               :variant="bearingType0 === 'rakrp' ? 'solid' : 'outline'"
@@ -56,7 +56,7 @@
             >
               {{ $t('observation.raspShort') }}
             </UButton>
-          </UButtonGroup>
+          </UFieldGroup>
         </div>
         
         <div>
@@ -141,7 +141,7 @@
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
             {{ $t('observation.bearing') }}
           </label>
-          <UButtonGroup size="sm" class="w-full">
+          <UFieldGroup size="sm" class="w-full">
             <UButton
               :color="bearingType1 === 'rakrp' ? 'primary' : 'neutral'"
               :variant="bearingType1 === 'rakrp' ? 'solid' : 'outline'"
@@ -158,7 +158,7 @@
             >
               {{ $t('observation.raspShort') }}
             </UButton>
-          </UButtonGroup>
+          </UFieldGroup>
         </div>
         
         <div>

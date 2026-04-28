@@ -7,7 +7,7 @@
       </label>
       <div class="grid grid-cols-2 gap-2">
         <div>
-          <UButtonGroup size="sm" class="w-full">
+          <UFieldGroup size="sm" class="w-full">
             <UButton
               :color="maneuverByTime ? 'primary' : 'neutral'"
               :variant="maneuverByTime ? 'solid' : 'outline'"
@@ -24,7 +24,7 @@
             >
               {{ $t('maneuver.byDistanceShort') }}
             </UButton>
-          </UButtonGroup>
+          </UFieldGroup>
         </div>
         
         <div>

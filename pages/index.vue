@@ -39,7 +39,7 @@
           />
           
           <!-- Language Switcher -->
-          <UButtonGroup>
+          <UFieldGroup>
             <UButton
               v-for="loc in availableLocales"
               :key="loc.code"
@@ -50,7 +50,7 @@
             >
               {{ loc.code.toUpperCase() }}
             </UButton>
-          </UButtonGroup>
+          </UFieldGroup>
           
           <!-- Theme Toggle -->
           <UButton

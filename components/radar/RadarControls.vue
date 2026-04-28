@@ -12,7 +12,7 @@
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
             {{ $t('radar.orientation') }}
           </label>
-          <UButtonGroup size="sm" class="w-full">
+          <UFieldGroup size="sm" class="w-full">
             <UButton
               :color="orientation === 'north' ? 'primary' : 'neutral'"
               :variant="orientation === 'north' ? 'solid' : 'outline'"
@@ -29,7 +29,7 @@
             >
               {{ $t('radar.courseUpShort') }}
             </UButton>
-          </UButtonGroup>
+          </UFieldGroup>
         </div>
         
         <!-- Range Selection -->
