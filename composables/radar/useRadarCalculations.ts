@@ -454,14 +454,14 @@ export function useRadarCalculations() {
     for (let i = 0; i < 2; i++) {
       if (target.bearingType[i] === 'rakrp') {
         // User entered compass bearing directly
-        updates.rakrp![i] = normalizeAngle(target.bearing[i]);
-        updates.rasp![i] = normalizeAngle(target.bearing[i] - ownCourse);
+        updates.rakrp![i] = normalizeAngle(target.bearing[i]!);
+        updates.rasp![i] = normalizeAngle(target.bearing[i]! - ownCourse);
       } else {
         // User entered relative bearing (RaSP)
         // RaKrP = RaSP + course_at_time_of_observation
         const courseAtObservation = normalizeAngle(target.bearingCourseOffset[i] || ownCourse);
-        updates.rakrp![i] = normalizeAngle(target.bearing[i] + courseAtObservation);
-        updates.rasp![i] = normalizeAngle(target.bearing[i]);
+        updates.rakrp![i] = normalizeAngle(target.bearing[i]! + courseAtObservation);
+        updates.rasp![i] = normalizeAngle(target.bearing[i]!);
       }
     }
     
@@ -984,21 +984,21 @@ export function useRadarCalculations() {
       // Select the crossing point that is in the direction of relative motion (positive time)
       // We want the point that the target will reach in the future
       if (crossings.length === 2) {
-        const t0 = calculateTravelTime(pos1, crossings[0], target.KBr, target.vBr);
-        const t1 = calculateTravelTime(pos1, crossings[1], target.KBr, target.vBr);
+        const t0 = calculateTravelTime(pos1, crossings[0]!, target.KBr, target.vBr);
+        const t1 = calculateTravelTime(pos1, crossings[1]!, target.KBr, target.vBr);
         
         // Choose the one with the smaller positive time (nearest future point)
         if (t0 >= -EPSILON && t1 >= -EPSILON) {
-          mpoint = t0 < t1 ? crossings[0] : crossings[1];
+          mpoint = t0 < t1 ? crossings[0]! : crossings[1]!;
         } else if (t0 >= -EPSILON) {
-          mpoint = crossings[0];
+          mpoint = crossings[0]!;
         } else if (t1 >= -EPSILON) {
-          mpoint = crossings[1];
+          mpoint = crossings[1]!;
         } else {
           return { success: false, error: 'Maneuver point is in the past' };
         }
       } else {
-        mpoint = crossings[0];
+        mpoint = crossings[0]!;
       }
       mdistance = maneuverDistance;
     } else {

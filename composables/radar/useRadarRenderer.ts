@@ -17,7 +17,9 @@ import {
   nauticalSinCos,
   bearingDistanceToXY,
   minutesToTimeString,
-  TARGET_LETTERS
+  TARGET_LETTERS,
+  RADAR_RANGES,
+  DEFAULT_RANGE_INDEX
 } from '~/utils/radarConstants';
 
 // Types for vector tracking and tooltips
@@ -540,8 +542,9 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     const radius = state.radiusPixels;
     const step = state.step;
     const range = state.range;
-    const marks = state.currentRange?.marks ?? 6;
-    const digits = state.currentRange?.digits ?? 0;
+    const currentRange = RADAR_RANGES[state.rangeIndex] ?? RADAR_RANGES[DEFAULT_RANGE_INDEX];
+    const marks = currentRange?.marks ?? 6;
+    const digits = currentRange?.digits ?? 0;
     const northUp = state.northUp;
     const ownCourse = state.ownCourse;
     
@@ -692,9 +695,9 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
+    ctx.moveTo(points[0]!.x, points[0]!.y);
     for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y);
+      ctx.lineTo(points[i]!.x, points[i]!.y);
     }
     ctx.closePath();
     ctx.fill();
@@ -757,7 +760,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
     offset: number,
     linesToAvoid: Array<{ x1: number; y1: number; x2: number; y2: number }>,
     pointsToAvoid: Array<{ x: number; y: number }>
-  ): { x: number; y: number; align: 'left' | 'center' | 'right' } {
+  ): { x: number; y: number; align: 'left' | 'center' | 'right' } | undefined {
     // Generate 12 candidate positions around the marker (every 30°)
     const candidates: Array<{ x: number; y: number; score: number; align: 'left' | 'center' | 'right' }> = [];
     
@@ -1135,7 +1138,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       // Position label away from the CPA point to avoid line overlaps
       const bestPos = findBestLabelPosition(cpaX, cpaY, 30, linesToAvoid, pointsToAvoid);
       
-      drawCPAMarkerAt(cpaX, cpaY, bestPos.x, bestPos.y, `CPA ${target.CPA.toFixed(1)}nm`);
+      if (bestPos) drawCPAMarkerAt(cpaX, cpaY, bestPos.x, bestPos.y, `CPA ${target.CPA.toFixed(1)}nm`);
     }
     
     // Draw velocity triangle if we have both observations
@@ -1353,7 +1356,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
         
         const newCpaBestPos = findBestLabelPosition(newCpa.x, newCpa.y, 30, newCpaLinesToAvoid, newCpaPointsToAvoid);
         
-        drawLabel(
+        if (newCpaBestPos) drawLabel(
           newCpaBestPos.x, newCpaBestPos.y,
           `CPA' ${target.newCPA.toFixed(1)}nm`,
           COLORS.CPA_MARKER,
@@ -1515,7 +1518,7 @@ export function useRadarRenderer(canvasRef: Ref<HTMLCanvasElement | null>, isDar
       
       const newCpaBestPos = findBestLabelPosition(newCpaX, newCpaY, 30, newCpaLinesToAvoid, newCpaPointsToAvoid);
       
-      drawLabel(
+      if (newCpaBestPos) drawLabel(
         newCpaBestPos.x, newCpaBestPos.y,
         `CPA' ${target.newCPA.toFixed(1)}nm`,
         COLORS.CPA_MARKER,

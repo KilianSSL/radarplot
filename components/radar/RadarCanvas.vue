@@ -337,19 +337,22 @@ function resetZoom() {
 // Get distance between two touch points
 function getTouchDistance(touches: TouchList): number {
   if (touches.length < 2) return 0
-  const dx = touches[0].clientX - touches[1].clientX
-  const dy = touches[0].clientY - touches[1].clientY
+  const t0 = touches[0]!, t1 = touches[1]!
+  const dx = t0.clientX - t1.clientX
+  const dy = t0.clientY - t1.clientY
   return Math.sqrt(dx * dx + dy * dy)
 }
 
 // Get center point between two touches
 function getTouchCenter(touches: TouchList): { x: number; y: number } {
+  const t0 = touches[0]!
   if (touches.length < 2) {
-    return { x: touches[0].clientX, y: touches[0].clientY }
+    return { x: t0.clientX, y: t0.clientY }
   }
+  const t1 = touches[1]!
   return {
-    x: (touches[0].clientX + touches[1].clientX) / 2,
-    y: (touches[0].clientY + touches[1].clientY) / 2
+    x: (t0.clientX + t1.clientX) / 2,
+    y: (t0.clientY + t1.clientY) / 2
   }
 }
 
@@ -376,7 +379,7 @@ function handleTouchStart(event: TouchEvent) {
     // Pan start (only when zoomed in) - prevent page scroll
     event.preventDefault()
     isDragging.value = true
-    dragStart.value = { x: touches[0].clientX, y: touches[0].clientY }
+    dragStart.value = { x: touches[0]!.clientX, y: touches[0]!.clientY }
     panStart.value = { x: panX.value, y: panY.value }
   }
   // Single finger when not zoomed: let page scroll naturally (don't prevent default)
@@ -420,8 +423,8 @@ function handleTouchMove(event: TouchEvent) {
     // Single finger pan (only when zoomed in) - prevent page scroll
     event.preventDefault()
     
-    const dx = touches[0].clientX - dragStart.value.x
-    const dy = touches[0].clientY - dragStart.value.y
+    const dx = touches[0]!.clientX - dragStart.value.x
+    const dy = touches[0]!.clientY - dragStart.value.y
     const maxPan = (canvasWidth.value * (zoom.value - 1)) / (2 * zoom.value)
     panX.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.x + dx / zoom.value))
     panY.value = Math.min(maxPan, Math.max(-maxPan, panStart.value.y + dy / zoom.value))

@@ -5,7 +5,7 @@
 
 import { defineStore } from 'pinia';
 import { watch } from 'vue';
-import type { RadarState, Target, ManeuverType } from '~/utils/radarTypes';
+import type { RadarState, Target, ManeuverType, ManeuverResult } from '~/utils/radarTypes';
 import {
   RADAR_NR_TARGETS,
   RADAR_RANGES,
@@ -48,6 +48,7 @@ function createEmptyTarget(index: number): Target {
     SPCPA: 0,
     TCPA: 0,
     tCPA: 0,
+    TCPA_clock: 0,
     
     haveCrossing: false,
     BCR: 0,
@@ -93,51 +94,9 @@ function createEmptyTarget(index: number): Target {
 }
 
 /**
- * Maneuver calculation result
- * Matches the C code's "nach Manöver" (after maneuver) output section
- */
-interface ManeuverResult {
-  newCPA?: number;
-  requiredCourse?: number;
-  requiredSpeed?: number;
-  error?: string;
-  // New relative motion (after maneuver)
-  newKBr?: number;         // New relative motion direction (°)
-  newVBr?: number;         // New relative motion speed (kn)
-  delta?: number;          // Change in relative motion direction (°)
-  newRaSP?: number;        // New relative bearing at maneuver point (°)
-  // New CPA data
-  newTCPA?: number;        // Time to new CPA (minutes)
-  newPCPA?: number;        // True bearing at new CPA (°)
-  newSPCPA?: number;       // Relative bearing at new CPA (°)
-  newTCPA_clock?: number;  // Clock time at new CPA (HHMM format)
-  // New bow crossing data
-  newHaveCrossing?: boolean;
-  newBCR?: number;         // New bow crossing range (nm, negative = behind)
-  newBCT?: number;         // Time to bow crossing (minutes)
-  newBCt?: number;         // Clock time of bow crossing (HHMM format)
-  // Maneuver point info
-  timeToManeuver?: number; // Time to reach maneuver point (minutes)
-  courseChange?: number;   // Course change in degrees
-  maneuverDistance?: number; // Distance to maneuver point (nm)
-}
-
-/**
  * Create initial radar state
  */
-function createInitialState(): RadarState & {
-  // Global maneuver state (applies to selected target)
-  maneuverTargetIndex: number;
-  maneuverByTime: boolean;
-  maneuverTime: number;
-  maneuverDistance: number;
-  maneuverType: 'course' | 'speed';
-  maneuverByCPA: boolean;
-  desiredCPA: number;
-  newCourse: number;
-  newSpeed: number;
-  maneuverResult: ManeuverResult;
-} {
+function createInitialState(): RadarState {
   return {
     // Display settings
     northUp: DEFAULTS.NORTH_UP,
@@ -145,7 +104,7 @@ function createInitialState(): RadarState & {
     
     // Range settings
     rangeIndex: DEFAULT_RANGE_INDEX,
-    range: RADAR_RANGES[DEFAULT_RANGE_INDEX].range,
+    range: RADAR_RANGES[DEFAULT_RANGE_INDEX]!.range,
     
     // Own ship
     ownCourse: DEFAULTS.OWN_COURSE,
@@ -162,7 +121,7 @@ function createInitialState(): RadarState & {
     
     // Maneuver planning (legacy)
     selectedTarget: 0,
-    legacyManeuverType: 0,
+    legacyManeuverType: 0 as ManeuverType,
     mtimeSelected: true,
     mtimeSet: false,
     mdistSet: false,
@@ -371,7 +330,7 @@ export const useRadarStore = defineStore('radar', {
     setRangeIndex(index: number) {
       if (index >= 0 && index < RADAR_RANGES.length) {
         this.rangeIndex = index;
-        this.range = RADAR_RANGES[index].range;
+        this.range = RADAR_RANGES[index]!.range;
         this.modified = true;
       }
     },
@@ -584,8 +543,8 @@ export const useRadarStore = defineStore('radar', {
       // First, clear all secondary targets' newCPA data
       for (let i = 0; i < RADAR_NR_TARGETS; i++) {
         if (i !== this.maneuverTargetIndex) {
-          this.targets[i].haveNewCPA = false;
-          this.targets[i].haveMpoint = false;
+          const t = this.targets[i];
+          if (t) { t.haveNewCPA = false; t.haveMpoint = false; }
         }
       }
       
@@ -669,7 +628,7 @@ export const useRadarStore = defineStore('radar', {
             const secondaryTarget = this.targets[i];
             
             // Only calculate for targets with valid data
-            if (!secondaryTarget.haveCPA || secondaryTarget.vBr <= 0) {
+            if (!secondaryTarget || !secondaryTarget.haveCPA || secondaryTarget.vBr <= 0) {
               continue;
             }
             
@@ -756,12 +715,13 @@ export const useRadarStore = defineStore('radar', {
         // Apply target data
         if (saved.targets) {
           saved.targets.forEach((savedTarget, i) => {
-            if (this.targets[i]) {
-              this.targets[i].time = savedTarget.time;
-              this.targets[i].bearingType = savedTarget.bearingType;
-              this.targets[i].bearing = savedTarget.bearing;
-              this.targets[i].bearingCourseOffset = savedTarget.bearingCourseOffset;
-              this.targets[i].distance = savedTarget.distance;
+            const t = this.targets[i];
+            if (t) {
+              t.time = savedTarget.time;
+              t.bearingType = savedTarget.bearingType;
+              t.bearing = savedTarget.bearing;
+              t.bearingCourseOffset = savedTarget.bearingCourseOffset;
+              t.distance = savedTarget.distance;
             }
           });
         }

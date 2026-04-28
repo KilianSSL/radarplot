@@ -41,7 +41,7 @@ export function parseRptFile(content: string): Partial<RadarState> | null {
       if (equalIndex > 0 && currentSection) {
         const key = trimmed.slice(0, equalIndex).trim();
         const value = trimmed.slice(equalIndex + 1).trim();
-        sections[currentSection][key] = value;
+        sections[currentSection]![key] = value;
       }
     }
     
@@ -73,7 +73,7 @@ function convertRptToState(sections: Record<string, Record<string, string>>): Pa
       const rangeIndex = parseInt(radar['Range']);
       if (rangeIndex >= 0 && rangeIndex < RADAR_RANGES.length) {
         state.rangeIndex = rangeIndex;
-        state.range = RADAR_RANGES[rangeIndex].range;
+        state.range = RADAR_RANGES[rangeIndex]!.range;
       }
     }
     
@@ -236,11 +236,11 @@ export function generateRptFile(state: RadarState): string {
     const target = state.targets[i];
     
     // Skip empty targets
-    if (target.distance[0] === 0 && target.distance[1] === 0) {
+    if (!target || (target.distance[0] === 0 && target.distance[1] === 0)) {
       continue;
     }
     
-    lines.push(`[Opponent ${targetLetters[i]}]`);
+    lines.push(`[Opponent ${targetLetters[i] ?? i}]`);
     
     // Observation 0
     lines.push(`Time(0)=${target.time[0]}`);

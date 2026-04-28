@@ -54,7 +54,7 @@
           
           <!-- Theme Toggle -->
           <UButton
-            :icon="colorMode === 'dark' ? 'i-heroicons-sun' : 'i-heroicons-moon'"
+            :icon="colorMode.value === 'dark' ? 'i-heroicons-sun' : 'i-heroicons-moon'"
             variant="ghost"
             color="neutral"
             square
@@ -74,7 +74,7 @@
         
         <!-- Center - Canvas -->
         <section class="flex-1 min-h-[400px] lg:min-h-0 flex items-start justify-center">
-          <UCard class="aspect-square w-full max-w-full max-h-full overflow-hidden" :ui="{ body: { padding: 'p-0', base: 'h-full' } }">
+          <UCard class="aspect-square w-full max-w-full max-h-full overflow-hidden" :ui="{ body: 'p-0 h-full' }">
             <RadarCanvas ref="canvasRef" />
           </UCard>
         </section>
@@ -123,6 +123,8 @@
         >
           brainaid.de/people/ecd/radarplot
         </a>
+        <span class="hidden sm:inline text-gray-300 dark:text-gray-600">·</span>
+        <span>v{{ config.public.appVersion }}</span>
       </div>
     </footer>
   </div>
@@ -135,6 +137,7 @@ import RadarTargetPanel from '~/components/radar/TargetPanel.vue'
 import ManeuverPanel from '~/components/radar/ManeuverPanel.vue'
 import { TARGET_LETTERS } from '~/utils/radarConstants'
 
+const config = useRuntimeConfig()
 const { locale, locales, setLocale } = useI18n()
 const colorMode = useColorMode()
 const radarStore = useRadarStore()

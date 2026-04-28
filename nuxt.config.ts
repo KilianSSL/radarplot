@@ -1,5 +1,12 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import pkg from './package.json';
+
 export default defineNuxtConfig({
+  runtimeConfig: {
+    public: {
+      appVersion: pkg.version
+    }
+  },
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
   
@@ -110,9 +117,7 @@ export default defineNuxtConfig({
     defaultLocale: 'en',
     strategy: 'prefix_except_default',
     vueI18n: './i18n.config.ts',
-    bundle: {
-      optimizeTranslationDirective: false
-    }
+    bundle: {}
   },
 
   experimental: {

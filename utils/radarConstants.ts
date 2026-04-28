@@ -409,8 +409,8 @@ export function minutesToTimeString(minutes: number): string {
 export function timeStringToMinutes(timeStr: string): number {
   const parts = timeStr.split(':');
   if (parts.length !== 2) return 0;
-  const hours = parseInt(parts[0], 10);
-  const minutes = parseInt(parts[1], 10);
+  const hours = parseInt(parts[0] ?? '', 10);
+  const minutes = parseInt(parts[1] ?? '', 10);
   if (isNaN(hours) || isNaN(minutes)) return 0;
   return (hours % 24) * 60 + minutes;
 }

@@ -162,6 +162,32 @@ export interface RenderLabel {
 }
 
 // ============================================================================
+// Maneuver Result
+// ============================================================================
+
+export interface ManeuverResult {
+  newCPA?: number;
+  requiredCourse?: number;
+  requiredSpeed?: number;
+  error?: string;
+  newKBr?: number;
+  newVBr?: number;
+  delta?: number;
+  newRaSP?: number;
+  newTCPA?: number;
+  newPCPA?: number;
+  newSPCPA?: number;
+  newTCPA_clock?: number;
+  newHaveCrossing?: boolean;
+  newBCR?: number;
+  newBCT?: number;
+  newBCt?: number;
+  timeToManeuver?: number;
+  courseChange?: number;
+  maneuverDistance?: number;
+}
+
+// ============================================================================
 // Range Configuration (from radar_ranges[] in radar.c)
 // ============================================================================
 
@@ -209,11 +235,12 @@ export interface Target {
 
   // CPA calculations
   haveCPA: boolean;
-  CPA: number;     // Closest Point of Approach distance (nm)
-  PCPA: number;    // True bearing at CPA (degrees)
-  SPCPA: number;   // Relative bearing at CPA (degrees)
-  TCPA: number;    // Time to CPA (minutes)
-  tCPA: number;    // Clock time at CPA (minutes)
+  CPA: number;       // Closest Point of Approach distance (nm)
+  PCPA: number;      // True bearing at CPA (degrees)
+  SPCPA: number;     // Relative bearing at CPA (degrees)
+  TCPA: number;      // Time to CPA (minutes)
+  tCPA: number;      // Clock time at CPA (minutes)
+  TCPA_clock: number; // Clock time at CPA (HHMM format)
 
   // Bow crossing calculations
   haveCrossing: boolean;
@@ -285,9 +312,9 @@ export interface RadarState {
   // Target tracking (5 targets: B, C, D, E, F)
   targets: [Target, Target, Target, Target, Target];
 
-  // Maneuver planning
+  // Maneuver planning (legacy fields)
   selectedTarget: number;    // Index of target for maneuver (0-4)
-  maneuverType: ManeuverType;
+  legacyManeuverType: ManeuverType;
   mtimeSelected: boolean;    // True = by time, False = by distance
   mtimeSet: boolean;
   mdistSet: boolean;
@@ -300,6 +327,18 @@ export interface RadarState {
   direction: number;        // Direction indicator
   ncourse: number;          // New course (degrees)
   nspeed: number;           // New speed (knots)
+
+  // Global maneuver state
+  maneuverTargetIndex: number;
+  maneuverByTime: boolean;
+  maneuverTime: number;
+  maneuverDistance: number;
+  maneuverType: 'course' | 'speed';
+  maneuverByCPA: boolean;
+  desiredCPA: number;
+  newCourse: number;
+  newSpeed: number;
+  maneuverResult: ManeuverResult;
 
   // Canvas dimensions
   canvasWidth: number;
